@@ -78,10 +78,17 @@ const RegisterPage: React.FC = () => {
     if (validateForm()) {
       console.log("Form validation successful, attempting registration...");
       try {
+        // Log browser info for debugging
+        console.log("Browser info:", {
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          language: navigator.language
+        });
+        
         await register(name, email, password);
         console.log("Registration function called successfully");
       } catch (err) {
-        console.error("Registration error:", err);
+        console.error("Registration error caught in component:", err);
       }
     } else {
       console.log("Form validation failed", formErrors);

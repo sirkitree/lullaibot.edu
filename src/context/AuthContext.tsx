@@ -143,11 +143,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     try {
       console.log("Attempting to register user:", { name, email });
+      
+      // Log the API URL being used
+      console.log("API URL:", api.defaults.baseURL);
+      
+      // Make the request with explicit headers
       const response = await api.post('/auth/register', {
         name,
         email,
         password,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
+      
+      console.log("Registration response:", response.status, response.statusText);
       
       if (response.data.success) {
         const { token, data } = response.data;
@@ -163,7 +175,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.log('Registration successful');
       }
     } catch (err: any) {
-      console.error('Registration error:', err);
+      console.error('Registration error details:', {
+        message: err.message,
+        response: err.response ? {
+          status: err.response.status,
+          statusText: err.response.statusText,
+          data: err.response.data
+        } : 'No response data',
+        request: err.request ? 'Request was made but no response' : 'No request was made'
+      });
+      
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
