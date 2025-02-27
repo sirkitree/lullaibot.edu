@@ -1,0 +1,44 @@
+{
+  "name": "lullaibot-education-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An application that enhances the functionality of the Lullabot AI Education Wiki",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.16.0",
+    "axios": "^1.5.0",
+    "formik": "^2.4.3",
+    "yup": "^1.2.0",
+    "react-query": "^3.39.3",
+    "framer-motion": "^10.16.4",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "react-icons": "^4.10.1",
+    "marked": "^9.0.0",
+    "date-fns": "^2.30.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "@types/node": "^20.5.9",
+    "typescript": "^5.2.2",
+    "vite": "^4.4.9",
+    "@vitejs/plugin-react": "^4.0.4",
+    "eslint": "^8.48.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.0.3",
+    "vitest": "^0.34.3"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
+} 
