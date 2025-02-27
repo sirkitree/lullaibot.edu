@@ -31,17 +31,28 @@ const ResourcesPage: React.FC = () => {
         if (response.data.status === 'success') {
           console.log('Resources from API:', response.data.data);
           
-          // Combine API resources with mockResources, avoiding duplicates by checking ID
+          // Simply combine API resources with all mockResources
+          // If a resource with the same ID exists in both, prefer the API version
           const apiResources = response.data.data;
-          const apiResourceIds = new Set(apiResources.map((resource: ResourceProps) => resource.id));
           
-          // Filter out mock resources that have the same ID as API resources
-          const uniqueMockResources = mockResources.filter(mockResource => 
-            !apiResourceIds.has(mockResource.id)
-          );
+          // Create a map of all resources using ID as key for fast lookups
+          const combinedResourcesMap = new Map<string, ResourceProps>();
           
-          // Combine both sets of resources
-          const combinedResources = [...apiResources, ...uniqueMockResources];
+          // First add all mock resources to the map
+          mockResources.forEach((resource: ResourceProps) => {
+            combinedResourcesMap.set(resource.id, resource);
+          });
+          
+          // Then add all API resources, overwriting any duplicates
+          apiResources.forEach((resource: ResourceProps) => {
+            combinedResourcesMap.set(resource.id, resource);
+          });
+          
+          // Convert map back to array
+          const combinedResources = Array.from(combinedResourcesMap.values());
+          
+          console.log('Mock resources count:', mockResources.length);
+          console.log('API resources count:', apiResources.length);
           console.log('Combined resources count:', combinedResources.length);
           
           setResources(combinedResources);
