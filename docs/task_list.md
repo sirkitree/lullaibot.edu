@@ -66,6 +66,12 @@
   - [x] Create achievements system
   - [x] Develop leaderboard
   - [x] Add progress tracking
+  - [ ] **Resource Voting**
+    - [x] Add upvote UI to resource cards
+    - [x] Implement upvote functionality in frontend
+    - [x] Connect to backend upvote endpoint
+    - [ ] Update UI to reflect vote status
+    - [ ] Add sorting by upvotes in resource list
 
 - [ ] **Admin Functionality**
   - [ ] Create admin dashboard

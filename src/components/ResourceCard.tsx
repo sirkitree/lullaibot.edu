@@ -7,20 +7,23 @@ export interface ResourceProps {
   addedBy: string;
   date: string;
   tags?: string[];
+  upvotes?: number;
 }
 
 export interface ResourceCardProps {
   resource: ResourceProps;
   variant?: 'compact' | 'full';
   onClick?: (id: string) => void;
+  onUpvote?: (id: string) => void;
 }
 
 const ResourceCard: React.FC<ResourceCardProps> = ({ 
   resource, 
   variant = 'compact', 
-  onClick 
+  onClick,
+  onUpvote
 }) => {
-  const { id, title, description, url, date, tags } = resource;
+  const { id, title, description, url, date, tags, upvotes = 0 } = resource;
   
   const getDomain = (url: string): string => {
     try {
@@ -39,13 +42,36 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
       year: 'numeric' 
     }).format(date);
   };
+
+  const handleUpvote = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering card onClick
+    if (onUpvote) {
+      onUpvote(id);
+    }
+  };
   
   return (
     <div 
       className={`resource-card resource-card-${variant} card`}
       onClick={() => onClick && onClick(id)}
     >
-      <h3 className="resource-title">{title}</h3>
+      <div className="resource-header flex justify-between items-center">
+        <h3 className="resource-title">{title}</h3>
+        
+        <div className="upvote-container flex items-center">
+          <button 
+            className="upvote-button flex items-center gap-sm"
+            onClick={handleUpvote}
+            title="Upvote this resource"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="upvote-icon">
+              <path d="M7 10v12" />
+              <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z" />
+            </svg>
+            <span className="upvote-count">{upvotes}</span>
+          </button>
+        </div>
+      </div>
       
       {variant === 'full' && (
         <p className="resource-description">{description}</p>

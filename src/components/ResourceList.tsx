@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ResourceCard, { ResourceProps } from './ResourceCard';
+import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 
 interface ResourceListProps {
   resources: ResourceProps[];
@@ -18,10 +20,17 @@ const ResourceList: React.FC<ResourceListProps> = ({
   initialCategory = '',
 }) => {
   const [viewMode, setViewMode] = useState<'compact' | 'full'>('compact');
-  const [sortBy, setSortBy] = useState<'date' | 'title'>('date');
+  const [sortBy, setSortBy] = useState<'date' | 'title' | 'upvotes'>('date');
   const [filterCategory, setFilterCategory] = useState<string>(initialCategory);
+  const [localResources, setLocalResources] = useState<ResourceProps[]>(resources);
   const navigate = useNavigate();
   const location = useLocation();
+  const { token } = useAuth();
+
+  // Update local resources when prop resources change
+  useEffect(() => {
+    setLocalResources(resources);
+  }, [resources]);
 
   // Effect to initialize category from prop when it changes
   useEffect(() => {
@@ -52,10 +61,42 @@ const ResourceList: React.FC<ResourceListProps> = ({
     }, { replace: true });
   };
 
+  // Handle upvoting a resource
+  const handleUpvote = async (id: string) => {
+    if (!token) {
+      // Redirect to login if not authenticated
+      alert('Please log in to upvote resources');
+      navigate('/login', { state: { from: location.pathname } });
+      return;
+    }
+
+    try {
+      const response = await api.post(`/resources/${id}/upvote`);
+      
+      if (response.data.status === 'success') {
+        // Update the resource in our local state with the new upvote count
+        setLocalResources(prev => 
+          prev.map(resource => 
+            resource.id === id 
+              ? { ...resource, upvotes: (resource.upvotes || 0) + 1 } 
+              : resource
+          )
+        );
+        
+        alert('Resource upvoted!');
+      }
+    } catch (error) {
+      console.error('Error upvoting resource:', error);
+      alert('Failed to upvote resource. Please try again.');
+    }
+  };
+
   // Sort resources
-  const sortedResources = [...resources].sort((a, b) => {
+  const sortedResources = [...localResources].sort((a, b) => {
     if (sortBy === 'date') {
       return new Date(b.date).getTime() - new Date(a.date).getTime();
+    } else if (sortBy === 'upvotes') {
+      return (b.upvotes || 0) - (a.upvotes || 0);
     }
     return a.title.localeCompare(b.title);
   });
@@ -96,11 +137,12 @@ const ResourceList: React.FC<ResourceListProps> = ({
               <select 
                 id="sort-select"
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'date' | 'title')}
+                onChange={(e) => setSortBy(e.target.value as 'date' | 'title' | 'upvotes')}
                 className="sort-select"
               >
                 <option value="date">Newest</option>
                 <option value="title">Title</option>
+                <option value="upvotes">Most Upvoted</option>
               </select>
             </div>
             
@@ -151,6 +193,7 @@ const ResourceList: React.FC<ResourceListProps> = ({
               resource={resource}
               variant={viewMode}
               onClick={handleResourceClick}
+              onUpvote={handleUpvote}
             />
           ))}
         </div>
