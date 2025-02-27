@@ -27,7 +27,7 @@ services:
     name: lullaibot-edu-frontend
     env: static
     rootDir: .
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && NODE_ENV=production npm run build
     staticPublishPath: ./dist
     # Add routes for SPA
     routes:
@@ -36,9 +36,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        fromService:
-          name: lullaibot-edu-api
-          type: web
-          property: host
-          envVarPrefix: "https://"
-          append: "/api" 
+        value: "https://lullaibot-edu-api.onrender.com/api" 
