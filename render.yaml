@@ -1,0 +1,36 @@
+services:
+  # Backend API Service
+  - type: web
+    name: lullaibot-edu-api
+    env: node
+    rootDir: src/server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false # This will be set manually in Render dashboard
+      - key: JWT_SECRET
+        sync: false # This will be set manually in Render dashboard
+      - key: FRONTEND_URL
+        fromService:
+          name: lullaibot-edu-frontend
+          type: web
+          property: url
+
+  # Frontend Static Site
+  - type: web
+    name: lullaibot-edu-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: lullaibot-edu-api
+          type: web
+          property: url
+          append: /api 
