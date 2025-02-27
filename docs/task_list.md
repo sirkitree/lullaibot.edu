@@ -45,6 +45,7 @@
   - [x] Implement card view
   - [x] Create filter and sort functionality
   - [x] Implement search feature
+  - [x] Import mock resources into database for consistency
 
 - [x] **User System**
   - [x] Create user registration
@@ -70,7 +71,7 @@
     - [x] Add upvote UI to resource cards
     - [x] Implement upvote functionality in frontend
     - [x] Connect to backend upvote endpoint
-    - [ ] Update UI to reflect vote status
+    - [x] Update UI to reflect vote status
     - [ ] Add sorting by upvotes in resource list
 
 - [ ] **Admin Functionality**

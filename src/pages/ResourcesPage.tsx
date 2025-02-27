@@ -22,10 +22,71 @@ const ResourcesPage: React.FC = () => {
   // Log the initial category from URL for debugging
   console.log('Initial category from URL:', initialCategory);
 
+  // Import mock resources into the database
+  const importMockResources = async () => {
+    try {
+      // Only attempt to import if user is logged in
+      if (!token) return;
+      
+      console.log('Starting import of mock resources into database...');
+      
+      // Getting existing resources to check for duplicates
+      const existingResponse = await api.get('/resources');
+      if (existingResponse.data.status !== 'success') {
+        throw new Error('Failed to fetch existing resources');
+      }
+      
+      const existingResources = existingResponse.data.data;
+      const existingUrls = new Set(existingResources.map((r: ResourceProps) => r.url));
+      
+      // Filter mock resources that don't exist in the database
+      const newMockResources = mockResources.filter(mock => !existingUrls.has(mock.url));
+      
+      console.log(`Found ${newMockResources.length} mock resources to import`);
+      
+      // Only proceed if there are resources to import
+      if (newMockResources.length === 0) {
+        console.log('No new mock resources to import');
+        return;
+      }
+      
+      // Import each mock resource
+      const importPromises = newMockResources.map(async (resource) => {
+        try {
+          const importResponse = await api.post('/resources', {
+            title: resource.title,
+            description: resource.description,
+            url: resource.url,
+            category: resource.category,
+            tags: resource.tags || []
+          });
+          
+          return importResponse.data.status === 'success';
+        } catch (err) {
+          console.error(`Failed to import resource: ${resource.title}`, err);
+          return false;
+        }
+      });
+      
+      const results = await Promise.all(importPromises);
+      const successCount = results.filter(success => success).length;
+      
+      console.log(`Successfully imported ${successCount} mock resources into the database`);
+    } catch (err) {
+      console.error('Error importing mock resources:', err);
+    }
+  };
+
   useEffect(() => {
     const fetchResources = async () => {
       try {
         setLoading(true);
+        
+        // First, try to import mock resources into the database if user is logged in
+        if (token) {
+          await importMockResources();
+        }
+        
         const response = await api.get('/resources');
 
         if (response.data.status === 'success') {
