@@ -1,11 +1,10 @@
 import axios from 'axios';
 
-// In production, always use the production URL
-// In development, use the environment variable with a fallback
-const isProduction = import.meta.env.MODE === 'production';
-const API_URL = isProduction 
-  ? 'https://lullaibot-edu-api.onrender.com/api'
-  : (import.meta.env.VITE_API_URL || 'http://localhost:3002/api');
+// Always use the environment variable if available, otherwise fall back to defaults
+const API_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.MODE === 'production' 
+    ? 'https://lullaibot-edu-api.onrender.com/api' 
+    : 'http://localhost:3002/api');
 
 console.log('API URL:', API_URL);
 
