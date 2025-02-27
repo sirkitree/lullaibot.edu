@@ -64,6 +64,8 @@ const AddResourcePage: React.FC = () => {
     setError(null);
     
     try {
+      console.log('Analysis request initiated with token:', localStorage.getItem('token') ? 'Token exists' : 'No token found');
+      
       // Call the real LLM API endpoint
       const response = await api.post('/llm/analyze-url', { 
         url: formData.url,
@@ -92,9 +94,25 @@ const AddResourcePage: React.FC = () => {
       }));
       
       setSuggestedCategories(categories);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error analyzing URL:', error);
-      setError(error instanceof Error ? error.message : 'An unknown error occurred');
+      
+      // Show more specific error messages based on the status code
+      if (error.response) {
+        if (error.response.status === 401) {
+          setError('Authentication error: Your session may have expired. Please refresh the page or log in again.');
+        } else if (error.response.status === 429) {
+          setError('Rate limit exceeded: Please wait a moment before trying again.');
+        } else if (error.response.data && error.response.data.message) {
+          setError(`Analysis failed: ${error.response.data.message}`);
+        } else {
+          setError(`Server error (${error.response.status}): Please try again later.`);
+        }
+      } else if (error.request) {
+        setError('Network error: Could not connect to the server. Please check your internet connection.');
+      } else {
+        setError(error instanceof Error ? error.message : 'An unknown error occurred');
+      }
       
       // Use mock data as fallback in case of error
       const mockCategories = [
