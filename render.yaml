@@ -19,7 +19,8 @@ services:
         fromService:
           name: lullaibot-edu-frontend
           type: web
-          property: url
+          property: host
+          envVarPrefix: "https://"
 
   # Frontend Static Site
   - type: web
@@ -32,5 +33,6 @@ services:
         fromService:
           name: lullaibot-edu-api
           type: web
-          property: url
-          append: /api 
+          property: host
+          envVarPrefix: "https://"
+          append: "/api" 
