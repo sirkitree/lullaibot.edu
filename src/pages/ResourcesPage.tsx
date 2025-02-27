@@ -4,9 +4,7 @@ import ResourceList from '../components/ResourceList';
 import { mockResources } from '../data/mockResources';
 import { ResourceProps } from '../components/ResourceCard';
 import { useAuth } from '../context/AuthContext';
-
-// Using direct URL as Vite environment variables may not be properly typed
-const API_URL = 'http://localhost:3002/api';
+import api from '../utils/api';
 
 const ResourcesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,56 +26,34 @@ const ResourcesPage: React.FC = () => {
     const fetchResources = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/resources`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const response = await api.get('/resources');
 
-        if (!response.ok) {
+        if (response.data.status === 'success') {
+          console.log('Resources from API:', response.data.data);
+          setResources(response.data.data);
+        } else {
           throw new Error('Failed to fetch resources');
         }
-
-        const data = await response.json();
-        console.log('Fetched resources from API:', data);
-        
-        // For now, use only mock resources to ensure consistency with homepage counts
-        console.log('Using mock resources instead of API data for consistency');
-        setResources(mockResources);
-        
-        // Commenting out API mixing logic until we resolve category consistency
-        /*
-        if (data.status === 'success') {
-          // Combine API resources with mock resources
-          // Create a Set of existing IDs to avoid duplicates
-          const existingIds = new Set(data.data.map((r: ResourceProps) => r.id));
-          
-          // Filter out mock resources that have the same ID as API resources
-          const uniqueMockResources = mockResources.filter(mockResource => 
-            !existingIds.has(mockResource.id)
-          );
-          
-          // Combine the API resources with unique mock resources
-          const combinedResources = [...data.data, ...uniqueMockResources];
-          console.log('Combined resources count:', combinedResources.length);
-          
-          setResources(combinedResources);
-        } else {
-          // If the API returns an error, fall back to mock data
-          console.warn('API returned an error, using mock data');
-          setResources(mockResources);
-        }
-        */
       } catch (err) {
         console.error('Error fetching resources:', err);
-        setError('Failed to load resources from API. Using mock data instead.');
+        setError('Failed to load resources. Please try again later.');
+        
+        // Fallback to mock data if API fails
+        console.log('Using mock data as fallback');
         setResources(mockResources);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchResources();
+    // Fetch resources as soon as token is available
+    if (token) {
+      fetchResources();
+    } else {
+      setLoading(false);
+      // Use mock data when no token is available
+      setResources(mockResources);
+    }
   }, [token]);
 
   // Filter resources based on search query

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 
 interface UserStats {
   contributions: number;
@@ -27,8 +28,6 @@ const UserProgress: React.FC<UserProgressProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  const API_URL = 'http://localhost:3002/api';
-
   useEffect(() => {
     const fetchUserStats = async () => {
       if (!user) {
@@ -38,18 +37,9 @@ const UserProgress: React.FC<UserProgressProps> = ({
       
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/users/${user.id}/stats`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const response = await api.get(`/users/${user.id}/stats`);
         
-        if (!response.ok) {
-          throw new Error('Failed to fetch user stats');
-        }
-        
-        const data = await response.json();
-        setUserStats(data.data);
+        setUserStats(response.data.data);
         setError(null);
       } catch (err) {
         console.error('Error fetching user stats:', err);
@@ -58,19 +48,19 @@ const UserProgress: React.FC<UserProgressProps> = ({
         // Fallback to mock data for development
         setUserStats({
           contributions: 12,
-          points: 145,
+          points: 142,
           streak: 3,
           rank: 5,
           achievements: {
-            earned: 7,
-            total: 10
+            earned: 4,
+            total: 12
           }
         });
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchUserStats();
   }, [user, token]);
 

@@ -15,9 +15,7 @@ import {
   CalendarClock, 
   FilePlus 
 } from 'lucide-react';
-
-// API URL
-const API_URL = 'http://localhost:3002/api';
+import api from '../utils/api';
 
 interface LeaderboardUser {
   rank: number;
@@ -64,39 +62,27 @@ const LeaderboardPage: React.FC = () => {
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
+      if (!token) {
+        setError('Authentication required');
+        setLoading(false);
+        return;
+      }
+      
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/users/leaderboard?period=${timePeriod}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          console.error('Leaderboard request failed:', {
-            status: response.status,
-            statusText: response.statusText,
-            url: response.url
-          });
-          const errorData = await response.json().catch(() => ({}));
-          console.error('Error response:', errorData);
-          throw new Error(`Failed to fetch leaderboard data: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
+        const response = await api.get(`/users/leaderboard?period=${timePeriod}`);
         
-        if (data.status === 'success') {
-          setLeaderboard(data.data);
+        if (response.data && response.data.status === 'success') {
+          setLeaderboard(response.data.data);
           
           // Check for the current user in the leaderboard data
           if (user) {
             console.log('Current user:', user);
             console.log('User ID from auth context:', user.id);
-            console.log('All leaderboard IDs:', data.data.map((l: LeaderboardUser) => l.id));
+            console.log('All leaderboard IDs:', response.data.data.map((l: LeaderboardUser) => l.id));
             
             // Try to find the user by comparing IDs as strings
-            const userInLeaderboard = data.data.find((leader: LeaderboardUser) => 
+            const userInLeaderboard = response.data.data.find((leader: LeaderboardUser) => 
               isCurrentUser(leader.id)
             );
             
@@ -109,8 +95,22 @@ const LeaderboardPage: React.FC = () => {
               console.log('Could not find user in leaderboard. Try refreshing the page.');
             }
           }
+        } else if (response.data && Array.isArray(response.data.users)) {
+          // Handle alternative response format
+          setLeaderboard(response.data.users);
+          
+          // Check for the current user in the leaderboard data
+          if (user) {
+            const userInLeaderboard = response.data.users.find((leader: LeaderboardUser) => 
+              isCurrentUser(leader.id)
+            );
+            
+            if (userInLeaderboard) {
+              setCurrentUserData(userInLeaderboard);
+            }
+          }
         } else {
-          throw new Error(data.message || 'Failed to load leaderboard');
+          throw new Error('Invalid leaderboard data format');
         }
       } catch (err) {
         console.error('Error fetching leaderboard:', err);

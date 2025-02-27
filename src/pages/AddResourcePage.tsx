@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 
 interface FormData {
   url: string;
@@ -16,7 +17,7 @@ interface Category {
 }
 
 // Using direct URL as Vite environment variables may not be properly typed
-const API_URL = 'http://localhost:3002/api';
+// const API_URL = 'http://localhost:3002/api';
 
 const AddResourcePage: React.FC = () => {
   const navigate = useNavigate();
@@ -62,25 +63,13 @@ const AddResourcePage: React.FC = () => {
     
     try {
       // Call the real LLM API endpoint
-      const response = await fetch(`${API_URL}/llm/analyze-url`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ 
-          url: formData.url,
-          title: formData.title,
-          description: formData.description
-        })
+      const response = await api.post('/llm/analyze-url', { 
+        url: formData.url,
+        title: formData.title,
+        description: formData.description
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to analyze URL');
-      }
-      
-      const data = await response.json();
+      const data = response.data;
       
       if (data.status === 'warning') {
         console.warn('LLM categorization is disabled, using mock data');
@@ -144,39 +133,36 @@ const AddResourcePage: React.FC = () => {
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
       
+      setSubmitting(true);
+      
       // Call API to save the resource
-      const response = await fetch(`${API_URL}/resources`, {
-        method: 'POST',
+      const response = await api.post('/resources', {
+        url: formData.url,
+        title: formData.title,
+        description: formData.description,
+        categories: selectedCategories,
+        tags: tagArray
+      }, {
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          url: formData.url,
-          title: formData.title,
-          description: formData.description,
-          categories: selectedCategories,
-          tags: tagArray
-        })
+        }
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add resource');
+      if (response.status === 201 || response.status === 200) {
+        const data = response.data;
+        
+        // Reset form and show success message
+        setFormData({ url: '', title: '', description: '', tags: '' });
+        setSuggestedCategories([]);
+        setSubmissionStatus('success');
+        
+        // Redirect after a delay
+        setTimeout(() => {
+          navigate('/resources');
+        }, 2000);
+      } else {
+        throw new Error('Failed to create resource');
       }
-      
-      // Reset form
-      setFormData({
-        url: '',
-        title: '',
-        description: '',
-        tags: ''
-      });
-      setSuggestedCategories([]);
-      
-      // Show success message and redirect
-      alert('Resource added successfully! You earned 5 points.');
-      navigate('/resources');
     } catch (error) {
       console.error('Error adding resource:', error);
       setError(error instanceof Error ? error.message : 'An unknown error occurred');

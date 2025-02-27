@@ -1,6 +1,7 @@
 import React, { useState, useEffect, CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 
 // Define interfaces for achievement data
 interface Achievement {
@@ -51,8 +52,6 @@ const AchievementsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [leaderboardPoints, setLeaderboardPoints] = useState<number | null>(null);
   
-  const API_URL = 'http://localhost:3002/api';
-
   useEffect(() => {
     const fetchAchievements = async () => {
       if (!user) {
@@ -66,58 +65,46 @@ const AchievementsPage: React.FC = () => {
         console.log('User ID being used:', user.id);
         
         // Try to fetch with user.id first
-        let response = await fetch(`${API_URL}/achievements/user/${user.id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        // If not found, try with ID 1 as fallback (for development/testing)
-        if (!response.ok && response.status === 404) {
-          console.log('User not found with ID:', user.id, 'trying with ID: 1');
-          response = await fetch(`${API_URL}/achievements/user/1`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-        }
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch achievements: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Achievement data:', data);
-        
-        if (data.earned && data.earned.count === 0 && data.earned.data.length === 0) {
-          console.warn('API returned 0 earned achievements despite user having points');
+        try {
+          const response = await api.get(`/achievements/user/${user.id}`);
+          console.log('Achievement data:', response.data);
           
-          // If API returns 0 earned achievements but user has points, use our fixed data
-          setAchievements({
-            ...data,
-            earned: {
-              count: 1,
-              data: [
-                {
-                  id: '1',
-                  name: 'First Contribution',
-                  description: 'Added your first resource to the library',
-                  icon: 'trophy',
-                  points: 10,
-                  requirements: {
-                    type: 'contributions',
-                    count: 1
-                  },
-                  dateEarned: new Date().toISOString().split('T')[0]
-                }
-              ]
-            }
-          });
-        } else {
-          setAchievements(data);
+          if (response.data.earned && response.data.earned.count === 0 && response.data.earned.data.length === 0) {
+            console.warn('API returned 0 earned achievements despite user having points');
+            
+            // If API returns 0 earned achievements but user has points, use our fixed data
+            setAchievements({
+              ...response.data,
+              earned: {
+                count: 1,
+                data: [
+                  {
+                    id: '1',
+                    name: 'First Contribution',
+                    description: 'Added your first resource to the library',
+                    icon: 'trophy',
+                    points: 10,
+                    requirements: {
+                      type: 'contributions',
+                      count: 1
+                    },
+                    dateEarned: new Date().toISOString().split('T')[0]
+                  }
+                ]
+              }
+            });
+          } else {
+            setAchievements(response.data);
+          }
+          
+          setError(null);
+        } catch (err) {
+          // If not found, try with ID 1 as fallback (for development/testing)
+          console.log('User not found with ID:', user.id, 'trying with ID: 1');
+          const fallbackResponse = await api.get('/achievements/user/1');
+          setAchievements(fallbackResponse.data);
+          setError(null);
         }
-        
-        setError(null);
       } catch (err) {
         console.error('Error fetching achievements:', err);
         setError('Failed to load achievements. Please try again later.');
@@ -249,54 +236,41 @@ const AchievementsPage: React.FC = () => {
         setLoading(false);
       }
     };
-    
-    fetchAchievements();
-  }, [user, token]);
 
-  useEffect(() => {
-    // Fetch leaderboard data to get total user points
-    const fetchLeaderboardPoints = async () => {
-      if (!user) return;
-      
-      try {
-        console.log('Fetching leaderboard data for user:', user.id);
-        const response = await fetch(`${API_URL}/users/leaderboard`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch leaderboard data');
-        }
-        
-        const data = await response.json();
-        console.log('Leaderboard data:', data);
-        
-        // Find current user in leaderboard
-        const currentUser = data.data.find((entry: any) => 
-          entry.id === user.id || 
-          entry.name === user.name
-        );
-        
-        if (currentUser) {
-          console.log('Found user in leaderboard:', currentUser);
-          setLeaderboardPoints(currentUser.points);
-        } else {
-          console.warn('User not found in leaderboard data');
-          // Fallback to the first user in leaderboard for testing
-          if (data.data.length > 0) {
-            console.log('Using first leaderboard entry as fallback:', data.data[0]);
-            setLeaderboardPoints(data.data[0].points);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching leaderboard data:', err);
-      }
-    };
-    
+    fetchAchievements();
     fetchLeaderboardPoints();
   }, [user, token]);
+
+  const fetchLeaderboardPoints = async () => {
+    if (!user) return;
+    
+    try {
+      console.log('Fetching leaderboard data for user:', user.id);
+      const response = await api.get('/users/leaderboard');
+      
+      console.log('Leaderboard data:', response.data);
+      
+      // Find current user in leaderboard
+      const currentUser = response.data.data.find((entry: any) => 
+        entry.id === user.id || 
+        entry.name === user.name
+      );
+      
+      if (currentUser) {
+        console.log('Found user in leaderboard:', currentUser);
+        setLeaderboardPoints(currentUser.points);
+      } else {
+        console.warn('User not found in leaderboard data');
+        // Fallback to the first user in leaderboard for testing
+        if (response.data.data.length > 0) {
+          console.log('Using first leaderboard entry as fallback:', response.data.data[0]);
+          setLeaderboardPoints(response.data.data[0].points);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching leaderboard data:', err);
+    }
+  };
 
   // Helper function to render achievement icon
   const renderIcon = (iconName: string) => {

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import axios from 'axios';
+import api from '../utils/api';
 
 // Types
 interface User {
@@ -44,9 +45,6 @@ const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 // Custom hook for using auth context
 export const useAuth = () => useContext(AuthContext);
 
-// Using direct URL as Vite environment variables may not be properly typed
-const API_URL = 'http://localhost:3002/api';
-
 // Helper function to normalize user data
 const normalizeUserData = (userData: any): User => {
   // Ensure id is always a string and is present
@@ -83,7 +81,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Fetch user profile using token
   const fetchUserProfile = async (authToken: string) => {
     try {
-      const response = await axios.get(`${API_URL}/auth/me`, {
+      const response = await api.get('/auth/me', {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -112,7 +110,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     try {
       console.log("Attempting to login with:", { email });
-      const response = await axios.post(`${API_URL}/auth/login`, {
+      const response = await api.post('/auth/login', {
         email,
         password,
       });
@@ -145,7 +143,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     try {
       console.log("Attempting to register user:", { name, email });
-      const response = await axios.post(`${API_URL}/auth/register`, {
+      const response = await api.post('/auth/register', {
         name,
         email,
         password,
@@ -177,7 +175,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(true);
     
     try {
-      await axios.get(`${API_URL}/auth/logout`);
+      await api.get('/auth/logout');
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
