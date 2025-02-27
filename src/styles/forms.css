@@ -134,6 +134,17 @@
   border-radius: var(--border-radius-md);
   margin-bottom: 1rem;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+}
+
+.alert-icon {
+  margin-right: 0.75rem;
+  font-size: 1.125rem;
+}
+
+.alert-content {
+  flex: 1;
 }
 
 .alert-error {
@@ -146,6 +157,12 @@
   background-color: rgba(16, 185, 129, 0.1);
   color: var(--success);
   border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.alert-info {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--info);
+  border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .auth-nav .user-greeting {

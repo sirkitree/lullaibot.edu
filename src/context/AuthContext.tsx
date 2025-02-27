@@ -185,7 +185,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         request: err.request ? 'Request was made but no response' : 'No request was made'
       });
       
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      // Handle specific error cases
+      if (err.response?.status === 400 && err.response?.data?.message?.includes('already exists')) {
+        setError(`Account with email ${email} already exists. Please login instead.`);
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Registration failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

@@ -80,13 +80,19 @@ const LoginPage: React.FC = () => {
           
           {from !== '/' && (
             <div className="alert alert-info mb-md">
-              Please log in to access that page
+              <div className="alert-icon">ℹ️</div>
+              <div className="alert-content">
+                Please log in to access that page
+              </div>
             </div>
           )}
           
           {error && (
             <div className="alert alert-error mb-md">
-              {error}
+              <div className="alert-icon">⚠️</div>
+              <div className="alert-content">
+                <strong>Login Error: </strong>{error}
+              </div>
             </div>
           )}
           

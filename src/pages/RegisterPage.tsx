@@ -103,7 +103,15 @@ const RegisterPage: React.FC = () => {
           
           {error && (
             <div className="alert alert-error mb-md">
-              {error}
+              <div className="alert-icon">⚠️</div>
+              <div className="alert-content">
+                <strong>Registration Error: </strong>{error}
+                {error.includes('already exists') && (
+                  <div className="mt-sm">
+                    <Link to="/login" className="text-primary">Go to Login</Link>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           
