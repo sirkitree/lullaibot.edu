@@ -30,7 +30,21 @@ const ResourcesPage: React.FC = () => {
 
         if (response.data.status === 'success') {
           console.log('Resources from API:', response.data.data);
-          setResources(response.data.data);
+          
+          // Combine API resources with mockResources, avoiding duplicates by checking ID
+          const apiResources = response.data.data;
+          const apiResourceIds = new Set(apiResources.map((resource: ResourceProps) => resource.id));
+          
+          // Filter out mock resources that have the same ID as API resources
+          const uniqueMockResources = mockResources.filter(mockResource => 
+            !apiResourceIds.has(mockResource.id)
+          );
+          
+          // Combine both sets of resources
+          const combinedResources = [...apiResources, ...uniqueMockResources];
+          console.log('Combined resources count:', combinedResources.length);
+          
+          setResources(combinedResources);
         } else {
           throw new Error('Failed to fetch resources');
         }
