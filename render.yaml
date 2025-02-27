@@ -15,6 +15,10 @@ services:
         sync: false # This will be set manually in Render dashboard
       - key: JWT_SECRET
         sync: false # This will be set manually in Render dashboard
+      - key: JWT_EXPIRES_IN
+        value: "30d" # Token expires in 30 days
+      - key: JWT_COOKIE_EXPIRES_IN
+        value: 30 # Cookie expires in 30 days
       - key: FRONTEND_URL
         fromService:
           name: lullaibot-edu-frontend
