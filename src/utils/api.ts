@@ -1,7 +1,13 @@
 import axios from 'axios';
 
-// Use the environment variable with a fallback
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
+// In production, always use the production URL
+// In development, use the environment variable with a fallback
+const isProduction = import.meta.env.MODE === 'production';
+const API_URL = isProduction 
+  ? 'https://lullaibot-edu-api.onrender.com/api'
+  : (import.meta.env.VITE_API_URL || 'http://localhost:3002/api');
+
+console.log('API URL:', API_URL);
 
 // Create an axios instance with default config
 const api = axios.create({
