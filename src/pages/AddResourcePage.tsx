@@ -24,6 +24,8 @@ const AddResourcePage: React.FC = () => {
   const { token, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     url: '',
     title: '',
@@ -149,8 +151,6 @@ const AddResourcePage: React.FC = () => {
       });
       
       if (response.status === 201 || response.status === 200) {
-        const data = response.data;
-        
         // Reset form and show success message
         setFormData({ url: '', title: '', description: '', tags: '' });
         setSuggestedCategories([]);
@@ -168,6 +168,7 @@ const AddResourcePage: React.FC = () => {
       setError(error instanceof Error ? error.message : 'An unknown error occurred');
     } finally {
       setIsLoading(false);
+      setSubmitting(false);
     }
   };
   
@@ -183,6 +184,12 @@ const AddResourcePage: React.FC = () => {
         {error && (
           <div className="error-message mb-md">
             {error}
+          </div>
+        )}
+
+        {submissionStatus === 'success' && (
+          <div className="success-message mb-md">
+            Resource added successfully! Redirecting...
           </div>
         )}
         
@@ -293,10 +300,10 @@ const AddResourcePage: React.FC = () => {
           <div className="form-actions">
             <button 
               type="submit" 
-              className="button button-primary"
-              disabled={isLoading || (!formData.url || !formData.title || !formData.description)}
+              className="button button-primary" 
+              disabled={isLoading || submitting}
             >
-              {isLoading ? 'Submitting...' : 'Submit Resource'}
+              {submitting ? 'Submitting...' : 'Add Resource'}
             </button>
           </div>
         </form>
