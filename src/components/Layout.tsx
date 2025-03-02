@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,10 +9,26 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   
   const isActiveRoute = (path: string) => {
     return location.pathname === path;
   };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="app-container">
@@ -68,14 +84,51 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           
           <div className="auth-nav">
             {user ? (
-              <div className="flex items-center gap-sm">
-                <span className="user-greeting">Hello, {user.name}</span>
-                <button 
-                  onClick={() => logout()} 
-                  className="button button-outline-primary"
+              <div className="flex items-center gap-sm relative" ref={menuRef}>
+                <div 
+                  className="user-greeting flex items-center cursor-pointer" 
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
                 >
-                  Logout
-                </button>
+                  <span className="mr-2">Hello, {user.name}</span>
+                  <span className="dropdown-arrow">▼</span>
+                </div>
+                
+                {userMenuOpen && (
+                  <div className="user-dropdown">
+                    <ul>
+                      <li>
+                        <Link 
+                          to="/profile" 
+                          className={`dropdown-item ${isActiveRoute('/profile') ? 'active' : ''}`}
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          Profile
+                        </Link>
+                      </li>
+                      <li>
+                        <Link 
+                          to="/account-settings" 
+                          className={`dropdown-item ${isActiveRoute('/account-settings') ? 'active' : ''}`}
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          Account Settings
+                        </Link>
+                      </li>
+                      <li className="dropdown-divider"></li>
+                      <li>
+                        <button 
+                          onClick={() => {
+                            logout();
+                            setUserMenuOpen(false);
+                          }} 
+                          className="dropdown-item text-danger"
+                        >
+                          Logout
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex gap-sm">

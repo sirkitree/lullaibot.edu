@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const { protect, authorize } = require('../middleware/auth');
 // Import the User model for updating points and contributions
 const User = require('../models/User');
+const relevanceScoring = require('../services/llm/relevanceScoring');
 
 // In-memory storage for development (will be replaced with database)
 let resources = [
@@ -291,6 +292,89 @@ router.post('/:id/upvote', protect, async (req, res) => {
       status: 'success',
       data: resources[resourceIndex],
       warning: 'Upvote recorded but there was an issue updating user points'
+    });
+  }
+});
+
+/**
+ * @route GET /api/resources/search
+ * @description Search resources with relevance scoring
+ * @access Public
+ */
+router.get('/search', async (req, res) => {
+  try {
+    const { query, category, tag, sort, direction = 'desc' } = req.query;
+    
+    let filteredResources = [...resources];
+    
+    // Apply filters
+    if (category) {
+      filteredResources = filteredResources.filter(r => 
+        r.category.toLowerCase() === category.toLowerCase());
+    }
+    
+    if (tag) {
+      filteredResources = filteredResources.filter(r => 
+        r.tags.some(t => t.toLowerCase() === tag.toLowerCase()));
+    }
+    
+    // Check if LLM relevance scoring is enabled
+    const enableLLM = process.env.ENABLE_LLM_RELEVANCE_SCORING === 'true';
+    
+    if (query && query.trim()) {
+      // First perform a basic text search
+      const searchLower = query.toLowerCase();
+      filteredResources = filteredResources.filter(r => 
+        r.title.toLowerCase().includes(searchLower) || 
+        r.description.toLowerCase().includes(searchLower) ||
+        r.tags.some(t => t.toLowerCase().includes(searchLower)));
+      
+      // Apply relevance scoring
+      if (enableLLM) {
+        try {
+          // Use LLM-based relevance scoring
+          filteredResources = await relevanceScoring.scoreResources(query, filteredResources);
+        } catch (error) {
+          console.error('Error using LLM for relevance scoring:', error);
+          // Fallback to simple scoring
+          filteredResources = relevanceScoring.calculateSimpleScores(query, filteredResources);
+        }
+      } else {
+        // Use simple relevance scoring algorithm
+        filteredResources = relevanceScoring.calculateSimpleScores(query, filteredResources);
+      }
+    }
+    
+    // Apply sorting
+    if (sort) {
+      filteredResources.sort((a, b) => {
+        const sortOrder = direction === 'asc' ? 1 : -1;
+        if (sort === 'date') {
+          return sortOrder * (new Date(a.date) - new Date(b.date));
+        } else if (sort === 'upvotes') {
+          return sortOrder * (a.upvotes - b.upvotes);
+        } else if (sort === 'title') {
+          return sortOrder * a.title.localeCompare(b.title);
+        } else if (sort === 'relevance' && query && query.trim()) {
+          return sortOrder * (b.relevanceScore - a.relevanceScore);
+        }
+        return 0;
+      });
+    } else if (query && query.trim()) {
+      // Default sort by relevance when search query is provided
+      filteredResources.sort((a, b) => b.relevanceScore - a.relevanceScore);
+    }
+    
+    return res.json({
+      status: 'success',
+      count: filteredResources.length,
+      data: filteredResources
+    });
+  } catch (error) {
+    console.error('Error searching resources:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'An error occurred while searching resources'
     });
   }
 });

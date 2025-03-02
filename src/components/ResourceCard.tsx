@@ -8,6 +8,7 @@ export interface ResourceProps {
   date: string;
   tags?: string[];
   upvotes?: number;
+  relevanceScore?: number;
 }
 
 export interface ResourceCardProps {
@@ -15,15 +16,17 @@ export interface ResourceCardProps {
   variant?: 'compact' | 'full';
   onClick?: (id: string) => void;
   onUpvote?: (id: string) => void;
+  showRelevanceScore?: boolean;
 }
 
 const ResourceCard: React.FC<ResourceCardProps> = ({ 
   resource, 
   variant = 'compact', 
   onClick,
-  onUpvote
+  onUpvote,
+  showRelevanceScore = false
 }) => {
-  const { id, title, description, url, date, tags, upvotes = 0 } = resource;
+  const { id, title, description, url, date, tags, upvotes = 0, relevanceScore = 0 } = resource;
   
   const getDomain = (url: string): string => {
     try {
@@ -49,6 +52,11 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
       onUpvote(id);
     }
   };
+
+  // Format relevance score as percentage
+  const formatRelevanceScore = (score: number): string => {
+    return `${Math.round(score * 100)}%`;
+  };
   
   return (
     <div 
@@ -56,7 +64,15 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
       onClick={() => onClick && onClick(id)}
     >
       <div className="resource-header flex justify-between items-center">
-        <h3 className="resource-title">{title}</h3>
+        <div className="flex flex-col">
+          <h3 className="resource-title">{title}</h3>
+          {showRelevanceScore && (
+            <div className="relevance-score">
+              <span className="relevance-label">Relevance: </span>
+              <span className="relevance-value">{formatRelevanceScore(relevanceScore)}</span>
+            </div>
+          )}
+        </div>
         
         <div className="upvote-container flex items-center">
           <button 

@@ -10,6 +10,7 @@ interface ResourceListProps {
   emptyMessage?: string;
   showFilters?: boolean;
   initialCategory?: string;
+  showRelevanceSort?: boolean;
 }
 
 const ResourceList: React.FC<ResourceListProps> = ({
@@ -18,9 +19,12 @@ const ResourceList: React.FC<ResourceListProps> = ({
   emptyMessage = 'No resources found.',
   showFilters = true,
   initialCategory = '',
+  showRelevanceSort = false,
 }) => {
-  const [viewMode, setViewMode] = useState<'compact' | 'full'>('compact');
-  const [sortBy, setSortBy] = useState<'date' | 'title' | 'upvotes'>('date');
+  const [viewMode, setViewMode] = useState<'compact' | 'full'>('full');
+  const [sortBy, setSortBy] = useState<'date' | 'title' | 'upvotes' | 'relevance'>(
+    showRelevanceSort ? 'relevance' : 'date'
+  );
   const [filterCategory, setFilterCategory] = useState<string>(initialCategory);
   const [localResources, setLocalResources] = useState<ResourceProps[]>(resources);
   const navigate = useNavigate();
@@ -97,6 +101,8 @@ const ResourceList: React.FC<ResourceListProps> = ({
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     } else if (sortBy === 'upvotes') {
       return (b.upvotes || 0) - (a.upvotes || 0);
+    } else if (sortBy === 'relevance') {
+      return (b.relevanceScore || 0) - (a.relevanceScore || 0);
     }
     return a.title.localeCompare(b.title);
   });
@@ -137,9 +143,12 @@ const ResourceList: React.FC<ResourceListProps> = ({
               <select 
                 id="sort-select"
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'date' | 'title' | 'upvotes')}
+                onChange={(e) => setSortBy(e.target.value as 'date' | 'title' | 'upvotes' | 'relevance')}
                 className="sort-select"
               >
+                {showRelevanceSort && (
+                  <option value="relevance">Relevance</option>
+                )}
                 <option value="date">Newest</option>
                 <option value="title">Title</option>
                 <option value="upvotes">Most Upvoted</option>
@@ -194,6 +203,7 @@ const ResourceList: React.FC<ResourceListProps> = ({
               variant={viewMode}
               onClick={handleResourceClick}
               onUpvote={handleUpvote}
+              showRelevanceScore={showRelevanceSort && sortBy === 'relevance'}
             />
           ))}
         </div>

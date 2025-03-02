@@ -56,6 +56,34 @@ const ResourceSchema = new Schema({
     type: String,
     trim: true
   },
+  relevanceScore: {
+    type: Number,
+    default: 0
+  },
+  averageRating: {
+    type: Number,
+    default: 0
+  },
+  ratingsCount: {
+    type: Number,
+    default: 0
+  },
+  ratings: [{
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5
+    },
+    comment: String,
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],

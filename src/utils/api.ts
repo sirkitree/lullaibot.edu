@@ -1,10 +1,29 @@
 import axios from 'axios';
 
-// Always use the environment variable if available, otherwise fall back to defaults
+// Configuration priorities:
+// 1. VITE_API_URL from environment variables (set in .env files)
+// 2. Production URL if in production mode
+// 3. Dynamic port detection for local development
+
+// Get the current window location for dynamic port detection
+const getServerPort = () => {
+  // When running locally, the server is typically one port number higher than the frontend
+  // This assumes the frontend is running on the current window's port
+  if (typeof window !== 'undefined') {
+    const currentPort = window.location.port;
+    // If current port is a number, calculate server port
+    if (currentPort && !isNaN(parseInt(currentPort))) {
+      return parseInt(currentPort) + 1;
+    }
+  }
+  return 3002; // Default fallback port
+};
+
+// Determine the API URL
 const API_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.MODE === 'production' 
     ? 'https://lullaibot-edu-api.onrender.com/api' 
-    : 'http://localhost:3002/api');
+    : `http://localhost:${getServerPort()}/api`);
 
 console.log('API URL:', API_URL);
 

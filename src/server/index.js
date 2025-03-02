@@ -11,7 +11,12 @@ dotenv.config();
 
 // Initialize express app
 const app = express();
-const PORT = process.env.PORT || 3002;
+
+// Port Configuration:
+// 1. Use PORT from environment variables if set
+// 2. Use DEFAULT_PORT from environment variables if set
+// 3. Fall back to 3001 as a sensible default (backend typically runs on frontend port + 1)
+const PORT = process.env.PORT || process.env.DEFAULT_PORT || 3001;
 
 // CORS Configuration for multiple environments
 const corsOptions = {
@@ -19,6 +24,8 @@ const corsOptions = {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
       'http://localhost:3000',
+      // Dynamic localhost with any port (for development flexibility)
+      /^http:\/\/localhost:\d+$/,
       /\.onrender\.com$/
     ];
     
@@ -119,7 +126,7 @@ if (process.env.NODE_ENV !== 'test') {
 ======================================
 🚀 Server running on port ${PORT}
 📝 API documentation: http://localhost:${PORT}/api
-🔍 Health check: http://localhost:${PORT}/api/health
+�� Health check: http://localhost:${PORT}/api/health
 👤 Authentication routes: http://localhost:${PORT}/api/auth
 🤖 LLM routes: http://localhost:${PORT}/api/llm
 ======================================
