@@ -19,6 +19,27 @@
   padding: var(--spacing-lg);
 }
 
+/* Screenshot styling */
+.resource-screenshot {
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  margin-bottom: var(--spacing-sm);
+  border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.resource-screenshot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-medium) ease-in-out;
+}
+
+.resource-card:hover .resource-screenshot-img {
+  transform: scale(1.05);
+}
+
 .resource-title {
   margin-bottom: var(--spacing-xs);
   color: var(--text);

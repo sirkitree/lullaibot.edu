@@ -46,19 +46,21 @@
   - [x] Create filter and sort functionality
   - [x] Implement search feature
   - [x] Import mock resources into database for consistency
+  - [x] Get a screenshot of the webpage
+    - [x] Save it to the filesystem and db
+    - [x] Display it on the resource card
 
 - [x] **User System**
   - [x] Create user registration
   - [x] Implement login system
   - [x] Implement authorization for protected routes
-  - [ ] Develop user profile page
-  - [ ] Create account settings page
+  - [x] Develop user profile page
+  - [x] Create account settings page
 
 - [x] **LLM Integration**
   - [x] Implement automatic categorization
   - [x] Add tag generation
   - [x] Create summary generation
-  - [ ] Add content relevance scoring
 
 ## Phase 3: Enhanced Features (Weeks 7-10)
 
@@ -67,12 +69,12 @@
   - [x] Create achievements system
   - [x] Develop leaderboard
   - [x] Add progress tracking
-  - [ ] **Resource Voting**
+  - [x] **Resource Voting**
     - [x] Add upvote UI to resource cards
     - [x] Implement upvote functionality in frontend
     - [x] Connect to backend upvote endpoint
     - [x] Update UI to reflect vote status
-    - [ ] Add sorting by upvotes in resource list
+    - [x] Add sorting by upvotes in resource list
 
 - [ ] **Admin Functionality**
   - [ ] Create admin dashboard
@@ -82,9 +84,7 @@
 
 - [x] **Advanced Search**
   - [x] Implement advanced filtering
-  - [ ] Add autocomplete suggestions
-  - [ ] Create saved search feature
-  - [ ] Implement semantic search
+  - [x] Add autocomplete suggestions
 
 - [x] **Content Extraction**
   - [x] Implement URL content extraction

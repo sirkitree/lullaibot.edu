@@ -9,6 +9,7 @@ export interface ResourceProps {
   tags?: string[];
   upvotes?: number;
   relevanceScore?: number;
+  screenshot?: string | null;
 }
 
 export interface ResourceCardProps {
@@ -26,7 +27,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
   onUpvote,
   showRelevanceScore = false
 }) => {
-  const { id, title, description, url, date, tags, upvotes = 0, relevanceScore = 0 } = resource;
+  const { id, title, description, url, date, tags, upvotes = 0, relevanceScore = 0, screenshot } = resource;
   
   const getDomain = (url: string): string => {
     try {
@@ -58,11 +59,28 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     return `${Math.round(score * 100)}%`;
   };
   
+  // Default placeholder image URL (create a simple placeholder image in public directory)
+  const placeholderImage = '/images/resource-placeholder.svg';
+  
   return (
     <div 
       className={`resource-card resource-card-${variant} card`}
       onClick={() => onClick && onClick(id)}
     >
+      {/* Add screenshot image for both compact and full views */}
+      <div className="resource-screenshot">
+        <img 
+          src={screenshot || placeholderImage} 
+          alt={`Screenshot of ${title}`} 
+          className="resource-screenshot-img"
+          onError={(e) => {
+            // Fallback to placeholder if image fails to load
+            const target = e.target as HTMLImageElement;
+            target.src = placeholderImage;
+          }}
+        />
+      </div>
+      
       <div className="resource-header flex justify-between items-center">
         <div className="flex flex-col">
           <h3 className="resource-title">{title}</h3>

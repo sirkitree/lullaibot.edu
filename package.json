@@ -10,6 +10,7 @@
     "@mui/material": "^6.4.6",
     "axios": "^1.8.1",
     "bcryptjs": "^3.0.2",
+    "capture-website": "^4.2.0",
     "cookie-parser": "^1.4.7",
     "date-fns": "^2.30.0",
     "formik": "^2.4.3",
