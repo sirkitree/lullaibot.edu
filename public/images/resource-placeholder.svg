@@ -1,1 +1,9 @@
- 
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#f0f0f0"/>
+  <rect x="200" y="150" width="400" height="300" fill="#e0e0e0" rx="5" ry="5"/>
+  <circle cx="400" cy="250" r="50" fill="#d0d0d0"/>
+  <path d="M350 325 L450 325 L400 400 Z" fill="#d0d0d0"/>
+  <rect x="300" y="425" width="200" height="20" fill="#d0d0d0" rx="5" ry="5"/>
+  <rect x="300" y="460" width="200" height="15" fill="#d0d0d0" rx="5" ry="5"/>
+  <text x="400" y="320" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#a0a0a0">Resource Preview</text>
+</svg> 
