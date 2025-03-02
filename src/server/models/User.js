@@ -19,6 +19,10 @@ const UserSchema = new mongoose.Schema({
       'Please provide a valid email'
     ]
   },
+  legacyId: {
+    type: String,
+    index: true
+  },
   role: {
     type: String,
     enum: ['user', 'admin', 'editor'],

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ResourceList from '../components/ResourceList';
 import SearchAutocomplete from '../components/SearchAutocomplete';
-import { mockResources } from '../data/mockResources';
 import { ResourceProps } from '../components/ResourceCard';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
@@ -40,106 +39,23 @@ const ResourcesPage: React.FC = () => {
   // Log the initial category from URL for debugging
   console.log('Initial category from URL:', initialCategory);
 
-  // Import mock resources into the database
-  const importMockResources = async () => {
-    try {
-      // Only attempt to import if user is logged in
-      if (!token) return;
-      
-      console.log('Starting import of mock resources into database...');
-      
-      // Getting existing resources to check for duplicates
-      const existingResponse = await api.get('/resources');
-      if (existingResponse.data.status !== 'success') {
-        throw new Error('Failed to fetch existing resources');
-      }
-      
-      const existingResources = existingResponse.data.data;
-      const existingUrls = new Set(existingResources.map((r: ResourceProps) => r.url));
-      
-      // Filter mock resources that don't exist in the database
-      const newMockResources = mockResources.filter(mock => !existingUrls.has(mock.url));
-      
-      console.log(`Found ${newMockResources.length} mock resources to import`);
-      
-      // Only proceed if there are resources to import
-      if (newMockResources.length === 0) {
-        console.log('No new mock resources to import');
-        return;
-      }
-      
-      // Import each mock resource
-      const importPromises = newMockResources.map(async (resource) => {
-        try {
-          const importResponse = await api.post('/resources', {
-            title: resource.title,
-            description: resource.description,
-            url: resource.url,
-            category: resource.category,
-            tags: resource.tags || []
-          });
-          
-          return importResponse.data.status === 'success';
-        } catch (err) {
-          console.error(`Failed to import resource: ${resource.title}`, err);
-          return false;
-        }
-      });
-      
-      const results = await Promise.all(importPromises);
-      const successCount = results.filter(success => success).length;
-      
-      console.log(`Successfully imported ${successCount} mock resources into the database`);
-    } catch (err) {
-      console.error('Error importing mock resources:', err);
-    }
-  };
-
   useEffect(() => {
     const fetchResources = async () => {
       try {
         setLoading(true);
-        
-        // First, try to import mock resources into the database if user is logged in
-        if (token) {
-          await importMockResources();
-        }
         
         const response = await api.get('/resources');
 
         if (response.data.status === 'success') {
           console.log('Resources from API:', response.data.data);
           
-          // Simply combine API resources with all mockResources
-          // If a resource with the same ID exists in both, prefer the API version
           const apiResources = response.data.data;
-          
-          // Create a map of all resources using ID as key for fast lookups
-          const combinedResourcesMap = new Map<string, ResourceProps>();
-          
-          // First add all mock resources to the map
-          mockResources.forEach((resource: ResourceProps) => {
-            combinedResourcesMap.set(resource.id, resource);
-          });
-          
-          // Then add all API resources, overwriting any duplicates
-          apiResources.forEach((resource: ResourceProps) => {
-            combinedResourcesMap.set(resource.id, resource);
-          });
-          
-          // Convert map back to array
-          const combinedResources = Array.from(combinedResourcesMap.values());
-          
-          console.log('Mock resources count:', mockResources.length);
-          console.log('API resources count:', apiResources.length);
-          console.log('Combined resources count:', combinedResources.length);
-          
-          setResources(combinedResources);
+          setResources(apiResources);
           
           // Generate search suggestions from resource titles, categories, and tags
           const suggestions = new Set<string>();
           
-          combinedResources.forEach(resource => {
+          apiResources.forEach((resource: ResourceProps) => {
             // Add resource title words
             resource.title.split(' ').forEach(word => {
               if (word.length > 3) suggestions.add(word);
@@ -162,22 +78,8 @@ const ResourcesPage: React.FC = () => {
         console.error('Error fetching resources:', err);
         setError('Failed to load resources. Please try again later.');
         
-        // Fallback to mock data if API fails
-        console.log('Using mock data as fallback');
-        setResources(mockResources);
-        
-        // Generate search suggestions from mock resources
-        const suggestions = new Set<string>();
-        mockResources.forEach(resource => {
-          resource.title.split(' ').forEach(word => {
-            if (word.length > 3) suggestions.add(word);
-          });
-          suggestions.add(resource.category);
-          if (resource.tags) {
-            resource.tags.forEach(tag => suggestions.add(tag));
-          }
-        });
-        setSearchSuggestions(Array.from(suggestions));
+        // Show empty state instead of fallback to mock data
+        setResources([]);
       } finally {
         setLoading(false);
       }
@@ -204,26 +106,7 @@ const ResourcesPage: React.FC = () => {
     };
 
     // Fetch resources as soon as token is available
-    if (token) {
-      fetchResources();
-    } else {
-      setLoading(false);
-      // Use mock data when no token is available
-      setResources(mockResources);
-      
-      // Generate search suggestions from mock resources
-      const suggestions = new Set<string>();
-      mockResources.forEach(resource => {
-        resource.title.split(' ').forEach(word => {
-          if (word.length > 3) suggestions.add(word);
-        });
-        suggestions.add(resource.category);
-        if (resource.tags) {
-          resource.tags.forEach(tag => suggestions.add(tag));
-        }
-      });
-      setSearchSuggestions(Array.from(suggestions));
-    }
+    fetchResources();
     
     // Load saved searches
     loadSavedSearches();

@@ -113,6 +113,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             Account Settings
                           </Link>
                         </li>
+                        {user.role === 'admin' && (
+                          <li>
+                            <Link 
+                              to="/admin" 
+                              className={`dropdown-item ${isActiveRoute('/admin') ? 'active' : ''}`}
+                              onClick={() => setUserMenuOpen(false)}
+                            >
+                              Admin Dashboard
+                            </Link>
+                          </li>
+                        )}
                         <li className="dropdown-divider"></li>
                         <li>
                           <button 

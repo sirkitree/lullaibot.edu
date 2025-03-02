@@ -2,37 +2,64 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SiteStats from '../components/SiteStats';
 import ResourceCard from '../components/ResourceCard';
-import { mockResources } from '../data/mockResources';
+import api from '../utils/api';
+import { ResourceProps } from '../components/ResourceCard';
 
 const HomePage: React.FC = () => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [recentResources, setRecentResources] = useState<ResourceProps[]>([]);
+  const [error, setError] = useState<string | null>(null);
   
-  // Get most recent resources, sorted by date
-  const recentResources = [...mockResources]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 3); // Only take the 3 most recent
-
-  const categories = [
-    { id: 1, name: 'General AI Concepts', count: 3 },
-    { id: 2, name: 'Getting Started Guides', count: 3 },
-    { id: 3, name: 'Developer Resources', count: 3 },
-    { id: 4, name: 'Project Management Resources', count: 2 },
-    { id: 5, name: 'Advanced Technical Resources', count: 3 },
-    { id: 6, name: 'Security and Best Practices', count: 1 }
-  ];
+  // Categories - will be dynamically generated from API data
+  const [categories, setCategories] = useState<{id: number; name: string; count: number}[]>([]);
 
   useEffect(() => {
-    // In a real app, we would fetch recent resources from the API
-    // This is just a placeholder for now
+    // Fetch recent resources from the API
     const fetchRecentResources = async () => {
       try {
         setLoading(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
-        // Keep using mock data for now
-        setLoading(false);
+        const response = await api.get('/resources', {
+          params: {
+            limit: 3,
+            sort: '-createdAt' // Sort by most recent
+          }
+        });
+        
+        if (response.data.status === 'success') {
+          setRecentResources(response.data.data);
+          
+          // Generate category counts from all resources
+          const allResourcesResponse = await api.get('/resources');
+          if (allResourcesResponse.data.status === 'success') {
+            const allResources = allResourcesResponse.data.data;
+            
+            // Count resources by category
+            const categoryCounts: Record<string, number> = {};
+            allResources.forEach((resource: ResourceProps) => {
+              const category = resource.category;
+              categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+            });
+            
+            // Convert to array for display
+            const categoryArray = Object.entries(categoryCounts).map(([name, count], index) => ({
+              id: index + 1,
+              name,
+              count
+            }));
+            
+            setCategories(categoryArray);
+          }
+        } else {
+          throw new Error('Failed to fetch resources');
+        }
+        
+        setError(null);
       } catch (error) {
         console.error('Error fetching recent resources:', error);
+        setError('Failed to load recent resources');
+        // Show empty state
+        setRecentResources([]);
+      } finally {
         setLoading(false);
       }
     };
@@ -48,18 +75,24 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="home-page">
-      <section className="hero mb-lg">
-        <div className="card">
-          <h2>Welcome to LullAIbot Education</h2>
-          <p>
-            Discover, contribute, and learn from Lullabot's collection of AI resources.
-            Add new links, browse existing content, and earn achievements along the way.
-          </p>
-          <div className="flex gap-md mt-md">
-            <Link to="/resources" className="button button-primary">Browse Resources</Link>
-            <Link to="/add-resource" className="button button-outline">Add New Resource</Link>
+      <section className="hero-section">
+        {loading ? (
+          <div className="loading-state">Loading resources...</div>
+        ) : error ? (
+          <div className="error-state">{error}</div>
+        ) : (
+          <div className="card">
+            <h2>Welcome to LullAIbot Education</h2>
+            <p>
+              Discover, contribute, and learn from Lullabot's collection of AI resources.
+              Add new links, browse existing content, and earn achievements along the way.
+            </p>
+            <div className="flex gap-md mt-md">
+              <Link to="/resources" className="button button-primary">Browse Resources</Link>
+              <Link to="/add-resource" className="button button-outline">Add New Resource</Link>
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       <div className="dashboard-grid">

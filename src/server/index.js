@@ -4,10 +4,11 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
+const path = require('path');
 const { connectDB } = require('./config/database');
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from server directory
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Initialize express app
 const app = express();
@@ -66,12 +67,13 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // API routes
-const { router: resourceRoutes } = require('./routes/resources');
+const { router: resourceRoutes, adminRouter: resourceAdminRoutes } = require('./routes/resources');
 const categoryRoutes = require('./routes/categories');
 const { router: userRoutes } = require('./routes/users');
 const { router: achievementRoutes } = require('./routes/achievements');
 const authRoutes = require('./routes/auth');
 const llmRoutes = require('./routes/llm');
+const analyticsRoutes = require('./routes/analytics');
 
 // Mount routes
 app.use('/api/resources', resourceRoutes);
@@ -80,6 +82,41 @@ app.use('/api/users', userRoutes);
 app.use('/api/achievements', achievementRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/llm', llmRoutes);
+app.use('/api/admin', resourceAdminRoutes);
+app.use('/api/admin/analytics', analyticsRoutes);
+
+// Update existing users with legacyId if not present
+const User = require('./models/User');
+const updateUsersWithLegacyId = async () => {
+  try {
+    // Find users without legacyId
+    const users = await User.find({ legacyId: { $exists: false } });
+    console.log(`Found ${users.length} users without legacyId`);
+    
+    // Update each user with a legacyId
+    for (const user of users) {
+      user.legacyId = user._id.toString();
+      await user.save();
+      console.log(`Added legacyId to user: ${user.name}`);
+    }
+  } catch (err) {
+    console.error('Error updating users with legacyId:', err);
+  }
+};
+
+// Run migration after database connection is established
+if (process.env.NODE_ENV !== 'test') {
+  connectDB().then(() => {
+    console.log('Running user migration for legacyIds...');
+    updateUsersWithLegacyId();
+  }).catch(err => {
+    console.error(`Database connection error: ${err.message}`);
+  });
+} else {
+  connectDB().catch(err => {
+    console.error(`Database connection error: ${err.message}`);
+  });
+}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

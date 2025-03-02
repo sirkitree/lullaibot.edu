@@ -1,5 +1,11 @@
 import { ResourceProps } from '../components/ResourceCard';
 
+/**
+ * DEPRECATED: This file contains mock resources for development purposes.
+ * The application now uses real data from the MongoDB database instead.
+ * 
+ * This file is being kept for reference purposes only and will be removed in a future update.
+ */
 export const mockResources: ResourceProps[] = [
   {
     id: '1',

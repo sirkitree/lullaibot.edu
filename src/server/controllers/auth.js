@@ -30,6 +30,53 @@ exports.register = async (req, res, next) => {
   }
 };
 
+// @desc    Register admin user
+// @route   POST /api/auth/register-admin
+// @access  Admin Only
+exports.registerAdmin = async (req, res, next) => {
+  try {
+    // Verify that the requesting user is an admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Admin privileges required'
+      });
+    }
+
+    const { name, email, password } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already registered'
+      });
+    }
+
+    // Create admin user - explicitly setting the role to 'admin'
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role: 'admin'
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Admin user created successfully',
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public

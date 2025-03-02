@@ -5,7 +5,8 @@ const {
   logout,
   getMe,
   updateDetails,
-  updatePassword
+  updatePassword,
+  registerAdmin
 } = require('../controllers/auth');
 
 const router = express.Router();
@@ -22,5 +23,8 @@ router.get('/logout', logout);
 router.get('/me', protect, getMe);
 router.put('/updatedetails', protect, updateDetails);
 router.put('/updatepassword', protect, updatePassword);
+
+// Admin routes
+router.post('/register-admin', protect, registerAdmin);
 
 module.exports = router; 

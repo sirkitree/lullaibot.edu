@@ -1,33 +1,5 @@
 // Debug module - Functions and utilities to help with debugging
 
-// Define the interfaces for our debug functions
-interface AuthStatus {
-  authenticated: boolean;
-  expired?: boolean;
-  userId?: string;
-  role?: string;
-  iat?: string;
-  exp?: string;
-  tokenFormat?: string;
-  error?: string;
-}
-
-interface AdminStatus {
-  isAdmin: boolean;
-  userId?: string;
-  role?: string;
-  reason?: string;
-}
-
-// Extend Window interface globally
-declare global {
-  interface Window {
-    checkAuth: () => AuthStatus;
-    checkAdminAccess: () => AdminStatus;
-    clearAuth: () => { success: boolean };
-  }
-}
-
 // Log environment mode
 console.log('Current Mode:', import.meta.env.MODE);
 
@@ -39,7 +11,7 @@ if (import.meta.env.VITE_API_URL) {
 // Expose debugging functions to window object for console access
 if (typeof window !== 'undefined') {
   // Function to check auth status
-  window.checkAuth = (): AuthStatus => {
+  window.checkAuth = () => {
     const token = localStorage.getItem('token');
     if (!token) {
       console.log('Not authenticated: No token found');
@@ -75,14 +47,13 @@ if (typeof window !== 'undefined') {
         exp: new Date(payload.exp * 1000).toLocaleString()
       };
     } catch (error) {
-      const err = error as Error;
-      console.error('Error parsing token:', err);
-      return { authenticated: false, error: err.message };
+      console.error('Error parsing token:', error);
+      return { authenticated: false, error: error.message };
     }
   };
 
   // Function to check admin status
-  window.checkAdminAccess = (): AdminStatus => {
+  window.checkAdminAccess = () => {
     const authStatus = window.checkAuth();
     
     if (!authStatus.authenticated) {
@@ -111,8 +82,4 @@ if (typeof window !== 'undefined') {
 }
 
 // Export debug functions for tests (not used in browser)
-export const debugFunctions = {
-  // Functions can be added here if needed for testing
-};
-
-export default debugFunctions; 
+export const debugFunctions = {}; 

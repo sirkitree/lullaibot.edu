@@ -52,10 +52,12 @@ const normalizeUserData = (userData: any): User => {
   // Ensure id is always a string and is present
   const user = {
     ...userData,
-    id: userData._id ? userData._id.toString() : userData.id
+    id: userData._id ? userData._id.toString() : userData.id.toString()
   };
   
   console.log('Normalized user data:', user);
+  console.log('User ID type:', typeof user.id, 'value:', user.id, 'length:', user.id.length);
+  
   return user as User;
 };
 

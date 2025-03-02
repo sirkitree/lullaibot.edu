@@ -10,7 +10,10 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminRegistration from './pages/AdminRegistration';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import { AuthProvider } from './context/AuthContext';
 
 function App() {
@@ -60,8 +63,17 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/admin" 
+            element={
+              <AdminRoute>
+                <AdminDashboardPage />
+              </AdminRoute>
+            } 
+          />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/admin-registration" element={<AdminRegistration />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Layout>

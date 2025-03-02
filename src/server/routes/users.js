@@ -200,7 +200,24 @@ router.put('/me/profile', (req, res) => {
 router.get('/:id/stats', async (req, res) => {
   try {
     // First try to find user in MongoDB database
-    const dbUser = await User.findById(req.params.id);
+    let dbUser;
+    try {
+      // Handle both ObjectId and string ID formats
+      if (req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+        // Valid ObjectId format
+        dbUser = await User.findById(req.params.id);
+      } else {
+        // String ID format - try to find by other fields
+        dbUser = await User.findOne({ 
+          $or: [
+            { legacyId: req.params.id },
+            { id: req.params.id }
+          ]
+        });
+      }
+    } catch (err) {
+      console.log(`Error finding user by ID: ${err.message}`);
+    }
     
     if (!dbUser) {
       console.log(`User not found in database with ID: ${req.params.id}`);
@@ -474,7 +491,24 @@ router.get('/debug-user/:id', async (req, res) => {
     console.log(`Attempting to find user with ID: ${req.params.id}`);
     
     // Try to find the user in MongoDB
-    const dbUser = await User.findById(req.params.id);
+    let dbUser;
+    try {
+      // Handle both ObjectId and string ID formats
+      if (req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+        // Valid ObjectId format
+        dbUser = await User.findById(req.params.id);
+      } else {
+        // String ID format - try to find by other fields
+        dbUser = await User.findOne({ 
+          $or: [
+            { legacyId: req.params.id },
+            { id: req.params.id }
+          ]
+        });
+      }
+    } catch (err) {
+      console.log(`Error finding user by ID: ${err.message}`);
+    }
     
     if (dbUser) {
       console.log(`Found user in MongoDB: ${dbUser.name}`);
@@ -517,6 +551,235 @@ router.get('/debug-user/:id', async (req, res) => {
       status: 'error',
       message: 'Server error fetching user debug data',
       error: err.message 
+    });
+  }
+});
+
+/**
+ * @route GET /api/users/admin/users
+ * @description Get all users (admin only)
+ * @access Admin
+ */
+router.get('/admin/users', protect, async (req, res) => {
+  try {
+    // For production, we should verify the user is an admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Admin privileges required'
+      });
+    }
+
+    // Get query parameters for pagination and search
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || '';
+    
+    let query = {};
+    
+    // Add search functionality if search parameter is provided
+    if (search) {
+      query = {
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+    
+    // First try to find users in MongoDB
+    let users;
+    let total;
+    
+    try {
+      // Execute query with pagination
+      users = await User.find(query)
+        .select('-password') // Exclude password
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .sort({ createdAt: -1 });
+      
+      // Get total count for pagination
+      total = await User.countDocuments(query);
+      
+      console.log(`Found ${users.length} users in database matching query`);
+      
+      // Transform the Mongo document for the frontend
+      users = users.map(user => {
+        const userObject = user.toObject();
+        userObject.id = userObject._id.toString();
+        return userObject;
+      });
+    } catch (err) {
+      console.error('Error querying database:', err);
+      // Fall back to in-memory users if database query fails
+      users = mockAuthUsers
+        .filter(user => 
+          !search || 
+          user.name.toLowerCase().includes(search.toLowerCase()) || 
+          user.email.toLowerCase().includes(search.toLowerCase())
+        )
+        .slice((page - 1) * limit, page * limit)
+        .map(({ password, ...user }) => user);
+      
+      total = mockAuthUsers.length;
+      console.log(`Using in-memory users instead. Found ${users.length} users.`);
+    }
+    
+    return res.status(200).json({
+      success: true,
+      data: users,
+      total,
+      page,
+      limit
+    });
+  } catch (err) {
+    console.error('Error in admin/users route:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error fetching users'
+    });
+  }
+});
+
+/**
+ * @route PUT /api/users/admin/users/:id
+ * @description Update a user (admin only)
+ * @access Admin
+ */
+router.put('/admin/users/:id', protect, async (req, res) => {
+  try {
+    // Verify the user is an admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Admin privileges required'
+      });
+    }
+    
+    const userId = req.params.id;
+    
+    // Check if userId is valid
+    if (!userId || userId === 'undefined') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID provided'
+      });
+    }
+    
+    // Try to find and update user in the database
+    try {
+      // Check if user exists
+      const existingUser = await User.findById(userId);
+      
+      if (!existingUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+      
+      // Update allowed fields
+      const fieldsToUpdate = {
+        name: req.body.name,
+        email: req.body.email,
+        role: req.body.role,
+        points: req.body.points,
+        contributions: req.body.contributions,
+        streak: req.body.streak
+      };
+      
+      // Remove undefined fields
+      Object.keys(fieldsToUpdate).forEach(key => 
+        fieldsToUpdate[key] === undefined && delete fieldsToUpdate[key]
+      );
+      
+      // Update user
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        fieldsToUpdate,
+        { new: true, runValidators: true }
+      ).select('-password');
+      
+      // Add id property for frontend consistency
+      const userResponse = updatedUser.toObject();
+      userResponse.id = userResponse._id.toString();
+      
+      return res.status(200).json({
+        success: true,
+        data: userResponse
+      });
+    } catch (err) {
+      console.error('Database error updating user:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'Error updating user'
+      });
+    }
+  } catch (err) {
+    console.error('Server error in admin/users/:id route:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error updating user'
+    });
+  }
+});
+
+/**
+ * @route DELETE /api/users/admin/users/:id
+ * @description Delete a user (admin only)
+ * @access Admin
+ */
+router.delete('/admin/users/:id', protect, async (req, res) => {
+  try {
+    // Verify the user is an admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Admin privileges required'
+      });
+    }
+    
+    const userId = req.params.id;
+    
+    // Check if userId is valid
+    if (!userId || userId === 'undefined') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID provided'
+      });
+    }
+    
+    try {
+      // Check if user exists
+      const existingUser = await User.findById(userId);
+      
+      if (!existingUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+      
+      // Delete user
+      await User.findByIdAndDelete(userId);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'User deleted successfully'
+      });
+    } catch (err) {
+      console.error('Database error deleting user:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'Error deleting user'
+      });
+    }
+  } catch (err) {
+    console.error('Server error in admin/users/:id route:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error deleting user'
     });
   }
 });

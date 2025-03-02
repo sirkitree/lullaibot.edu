@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const adminRouter = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const { protect, authorize } = require('../middleware/auth');
 // Import the User model for updating points and contributions
@@ -379,8 +380,158 @@ router.get('/search', async (req, res) => {
   }
 });
 
+/**
+ * @route GET /api/admin/resources
+ * @description Get all resources for admin with pagination, search, and status filtering
+ * @access Private/Admin
+ */
+adminRouter.get('/resources', protect, authorize('admin'), (req, res) => {
+  const { page = 1, limit = 10, search = '', status = '' } = req.query;
+  
+  // Convert to numbers
+  const pageNum = parseInt(page, 10);
+  const limitNum = parseInt(limit, 10);
+  
+  // Apply filters
+  let filteredResources = [...resources];
+  
+  // Filter by status if provided
+  if (status) {
+    filteredResources = filteredResources.filter(r => r.status === status);
+  }
+  
+  // Apply search if provided
+  if (search) {
+    const searchLower = search.toLowerCase();
+    filteredResources = filteredResources.filter(r => 
+      r.title?.toLowerCase().includes(searchLower) || 
+      r.description?.toLowerCase().includes(searchLower) ||
+      r.tags?.some(t => t.toLowerCase().includes(searchLower))
+    );
+  }
+  
+  // Calculate pagination
+  const startIndex = (pageNum - 1) * limitNum;
+  const endIndex = startIndex + limitNum;
+  const paginatedResources = filteredResources.slice(startIndex, endIndex);
+  
+  // Add status field if not present (for backward compatibility)
+  const formattedResources = paginatedResources.map(resource => ({
+    ...resource,
+    status: resource.status || 'approved', // Default to approved for older records
+    submittedBy: resource.submittedBy || {
+      id: resource.addedBy,
+      name: 'Unknown User'
+    }
+  }));
+  
+  return res.json({
+    success: true,
+    total: filteredResources.length,
+    page: pageNum,
+    limit: limitNum,
+    data: formattedResources
+  });
+});
+
+/**
+ * @route PUT /api/admin/resources/:id
+ * @description Update a resource (admin version with more permissions)
+ * @access Private/Admin
+ */
+adminRouter.put('/resources/:id', protect, authorize('admin'), (req, res) => {
+  const { title, description, url, category, tags, status } = req.body;
+  
+  const resourceIndex = resources.findIndex(r => r.id === req.params.id);
+  
+  if (resourceIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Resource not found'
+    });
+  }
+  
+  const updatedResource = {
+    ...resources[resourceIndex],
+    title: title || resources[resourceIndex].title,
+    description: description !== undefined ? description : resources[resourceIndex].description,
+    url: url || resources[resourceIndex].url,
+    category: category || resources[resourceIndex].category,
+    tags: tags || resources[resourceIndex].tags,
+    status: status || resources[resourceIndex].status || 'approved'
+  };
+  
+  resources[resourceIndex] = updatedResource;
+  
+  return res.json({
+    success: true,
+    data: updatedResource
+  });
+});
+
+/**
+ * @route PATCH /api/admin/resources/:id/status
+ * @description Update a resource's status
+ * @access Private/Admin
+ */
+adminRouter.patch('/resources/:id/status', protect, authorize('admin'), (req, res) => {
+  const { status } = req.body;
+  
+  if (!status || !['pending', 'approved', 'rejected'].includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid status value'
+    });
+  }
+  
+  const resourceIndex = resources.findIndex(r => r.id === req.params.id);
+  
+  if (resourceIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Resource not found'
+    });
+  }
+  
+  // Update the status
+  resources[resourceIndex] = {
+    ...resources[resourceIndex],
+    status
+  };
+  
+  return res.json({
+    success: true,
+    data: resources[resourceIndex]
+  });
+});
+
+/**
+ * @route DELETE /api/admin/resources/:id
+ * @description Delete a resource (admin version)
+ * @access Private/Admin
+ */
+adminRouter.delete('/resources/:id', protect, authorize('admin'), (req, res) => {
+  const resourceIndex = resources.findIndex(r => r.id === req.params.id);
+  
+  if (resourceIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Resource not found'
+    });
+  }
+  
+  // Remove the resource
+  resources.splice(resourceIndex, 1);
+  
+  return res.json({
+    success: true,
+    message: 'Resource deleted successfully'
+  });
+});
+
 // Export both the router and resources array
 module.exports = {
   router,
-  resources
+  resources,
+  adminRouter // Export the admin router
 }; 
