@@ -66,7 +66,7 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // API routes
-const resourceRoutes = require('./routes/resources');
+const { router: resourceRoutes } = require('./routes/resources');
 const categoryRoutes = require('./routes/categories');
 const { router: userRoutes } = require('./routes/users');
 const { router: achievementRoutes } = require('./routes/achievements');
@@ -126,7 +126,7 @@ if (process.env.NODE_ENV !== 'test') {
 ======================================
 🚀 Server running on port ${PORT}
 📝 API documentation: http://localhost:${PORT}/api
-�� Health check: http://localhost:${PORT}/api/health
+👤 Health check: http://localhost:${PORT}/api/health
 👤 Authentication routes: http://localhost:${PORT}/api/auth
 🤖 LLM routes: http://localhost:${PORT}/api/llm
 ======================================

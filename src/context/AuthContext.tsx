@@ -25,6 +25,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
+  updateUserProfile: () => Promise<void>;
 }
 
 // Default context values
@@ -37,6 +38,7 @@ const defaultAuthContext: AuthContextType = {
   register: async () => {},
   logout: async () => {},
   clearError: () => {},
+  updateUserProfile: async () => {},
 };
 
 // Create context
@@ -221,6 +223,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setError(null);
   };
 
+  // Function to update user profile data
+  const updateUserProfile = async () => {
+    if (!token) return;
+    
+    try {
+      const response = await api.get('/auth/me');
+      
+      if (response.data.success) {
+        // Normalize user data to ensure ID is formatted correctly
+        const normalizedUser = normalizeUserData(response.data.data);
+        setUser(normalizedUser);
+        console.log('User profile updated from server:', normalizedUser);
+      }
+    } catch (err) {
+      console.error('Error refreshing user profile:', err);
+    }
+  };
+
   // Context value
   const contextValue: AuthContextType = {
     user,
@@ -231,6 +251,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     register,
     logout,
     clearError,
+    updateUserProfile
   };
 
   return (

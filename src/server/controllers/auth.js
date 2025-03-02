@@ -111,7 +111,8 @@ exports.updateDetails = async (req, res, next) => {
     const fieldsToUpdate = {
       name: req.body.name,
       email: req.body.email,
-      bio: req.body.bio
+      bio: req.body.bio,
+      profilePicture: req.body.profilePicture
     };
 
     // Remove undefined fields

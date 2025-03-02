@@ -84,51 +84,51 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           
           <div className="auth-nav">
             {user ? (
-              <div className="flex items-center gap-sm relative" ref={menuRef}>
+              <div className="flex items-center gap-sm" ref={menuRef}>
                 <div 
-                  className="user-greeting flex items-center cursor-pointer" 
+                  className="user-greeting flex items-center cursor-pointer position-relative" 
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                 >
                   <span className="mr-2">Hello, {user.name}</span>
                   <span className="dropdown-arrow">▼</span>
+                  
+                  {userMenuOpen && (
+                    <div className="user-dropdown">
+                      <ul>
+                        <li>
+                          <Link 
+                            to="/profile" 
+                            className={`dropdown-item ${isActiveRoute('/profile') ? 'active' : ''}`}
+                            onClick={() => setUserMenuOpen(false)}
+                          >
+                            Profile
+                          </Link>
+                        </li>
+                        <li>
+                          <Link 
+                            to="/account-settings" 
+                            className={`dropdown-item ${isActiveRoute('/account-settings') ? 'active' : ''}`}
+                            onClick={() => setUserMenuOpen(false)}
+                          >
+                            Account Settings
+                          </Link>
+                        </li>
+                        <li className="dropdown-divider"></li>
+                        <li>
+                          <button 
+                            onClick={() => {
+                              logout();
+                              setUserMenuOpen(false);
+                            }}
+                            className="dropdown-item text-danger"
+                          >
+                            Log Out
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
-                
-                {userMenuOpen && (
-                  <div className="user-dropdown">
-                    <ul>
-                      <li>
-                        <Link 
-                          to="/profile" 
-                          className={`dropdown-item ${isActiveRoute('/profile') ? 'active' : ''}`}
-                          onClick={() => setUserMenuOpen(false)}
-                        >
-                          Profile
-                        </Link>
-                      </li>
-                      <li>
-                        <Link 
-                          to="/account-settings" 
-                          className={`dropdown-item ${isActiveRoute('/account-settings') ? 'active' : ''}`}
-                          onClick={() => setUserMenuOpen(false)}
-                        >
-                          Account Settings
-                        </Link>
-                      </li>
-                      <li className="dropdown-divider"></li>
-                      <li>
-                        <button 
-                          onClick={() => {
-                            logout();
-                            setUserMenuOpen(false);
-                          }} 
-                          className="dropdown-item text-danger"
-                        >
-                          Logout
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                )}
               </div>
             ) : (
               <div className="flex gap-sm">

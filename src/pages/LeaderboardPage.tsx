@@ -60,6 +60,23 @@ const LeaderboardPage: React.FC = () => {
     }
   };
 
+  // Helper function to render user avatar
+  const renderUserAvatar = (leader: LeaderboardUser, size: number = 32) => {
+    if (leader.avatar) {
+      return (
+        <div className="avatar">
+          <img src={leader.avatar} alt={`${leader.name}'s avatar`} />
+        </div>
+      );
+    } else {
+      return (
+        <div className="avatar-placeholder">
+          <User size={size} />
+        </div>
+      );
+    }
+  };
+
   useEffect(() => {
     const fetchLeaderboard = async () => {
       if (!token) {
@@ -216,11 +233,9 @@ const LeaderboardPage: React.FC = () => {
                 <div className="rank-badge">
                   {getRankIcon(leader.rank)}
                 </div>
-                <div className="avatar">
-                  <div className="avatar-placeholder">
-                    <User size={32} />
-                  </div>
-                </div>
+                
+                {renderUserAvatar(leader, 80)}
+                
                 <div className="name">{leader.name}</div>
                 <div className="points"><Star size={16} className="icon" /> {leader.points} points</div>
                 <div className="contributions"><FileText size={16} className="icon" /> {leader.contributions} contributions</div>
@@ -249,10 +264,13 @@ const LeaderboardPage: React.FC = () => {
                   >
                     <td className="rank-cell">{getRankIcon(leader.rank)}</td>
                     <td className="user">
-                      <span className="name">{leader.name}</span>
-                      {isCurrentUser(leader.id) && (
-                        <span className="current-user-indicator"> (You)</span>
-                      )}
+                      <div className="user-info">
+                        {renderUserAvatar(leader, 32)}
+                        <span className="name">{leader.name}</span>
+                        {isCurrentUser(leader.id) && (
+                          <span className="current-user-indicator"> (You)</span>
+                        )}
+                      </div>
                     </td>
                     <td className="points">{leader.points}</td>
                     <td className="contributions">{leader.contributions}</td>

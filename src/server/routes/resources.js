@@ -379,4 +379,8 @@ router.get('/search', async (req, res) => {
   }
 });
 
-module.exports = router; 
+// Export both the router and resources array
+module.exports = {
+  router,
+  resources
+}; 

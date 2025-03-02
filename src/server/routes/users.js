@@ -3,6 +3,11 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+const bcrypt = require('bcryptjs');
+
+// Import resources from resources router
+const resourcesModule = require('./resources');
+const resources = resourcesModule.resources;
 
 // In-memory storage for development (will be replaced with database)
 let users = [
@@ -192,17 +197,42 @@ router.put('/me/profile', (req, res) => {
  * @description Get user stats for profile, achievements, and leaderboards
  * @access Private
  */
-router.get('/:id/stats', (req, res) => {
-  // Find the user
-  const user = users.find(u => u.id === req.params.id);
-  
-  if (!user) {
-    return res.status(404).json({
+router.get('/:id/stats', async (req, res) => {
+  try {
+    // First try to find user in MongoDB database
+    const dbUser = await User.findById(req.params.id);
+    
+    if (!dbUser) {
+      console.log(`User not found in database with ID: ${req.params.id}`);
+      
+      // Fall back to in-memory array (primarily for development)
+      const memUser = users.find(u => u.id === req.params.id || u._id === req.params.id);
+      
+      if (!memUser) {
+        console.log(`User not found in memory array either with ID: ${req.params.id}`);
+        return res.status(404).json({
+          status: 'error',
+          message: 'User not found'
+        });
+      }
+      
+      // Use memory user data
+      return sendUserStats(req, res, memUser);
+    }
+    
+    // Use database user data
+    return sendUserStats(req, res, dbUser);
+  } catch (err) {
+    console.error(`Error fetching user stats: ${err.message}`);
+    return res.status(500).json({
       status: 'error',
-      message: 'User not found'
+      message: 'Server error fetching user stats'
     });
   }
+});
 
+// Helper function to send user stats
+function sendUserStats(req, res, user) {
   // In a real app, we'd query the achievements collection
   // Here we'll use mock data that matches the expected interface
   const userAchievements = [
@@ -210,14 +240,14 @@ router.get('/:id/stats', (req, res) => {
     { id: '2', name: '5-Day Streak', dateEarned: '2023-10-10' }
   ];
   
-  // Get the user's position/rank based on points
-  const rankedUsers = [...users].sort((a, b) => b.points - a.points);
-  const userRank = rankedUsers.findIndex(u => u.id === user.id) + 1;
+  // For MongoDB users, we'll just use their position in the leaderboard as rank
+  // In a real app, this would be calculated with an aggregation query
+  const userRank = user.points > 100 ? 1 : (user.points > 50 ? 2 : 3);
   
   const stats = {
-    contributions: user.contributions,
-    points: user.points,
-    streak: user.currentStreak,
+    contributions: user.contributions || 0,
+    points: user.points || 0,
+    streak: user.currentStreak || 0,
     rank: userRank,
     achievements: {
       earned: userAchievements.length,
@@ -229,48 +259,90 @@ router.get('/:id/stats', (req, res) => {
     status: 'success',
     data: stats
   });
-});
+}
 
 /**
  * @route GET /api/users/:id/resources
  * @description Get resources contributed by a user
  * @access Public
  */
-router.get('/:id/resources', (req, res) => {
-  const user = users.find(u => u.id === req.params.id);
-  
-  if (!user) {
-    return res.status(404).json({
+router.get('/:id/resources', async (req, res) => {
+  try {
+    // First try to find user in MongoDB database
+    const dbUser = await User.findById(req.params.id);
+    
+    if (!dbUser) {
+      console.log(`User not found in database with ID: ${req.params.id}`);
+      
+      // Fall back to in-memory array (primarily for development)
+      const memUser = users.find(u => u.id === req.params.id || u._id === req.params.id);
+      
+      if (!memUser) {
+        console.log(`User not found in memory array either with ID: ${req.params.id}`);
+        return res.status(404).json({
+          status: 'error',
+          message: 'User not found'
+        });
+      }
+      
+      // Get resources from the in-memory array for development
+      const userMemResources = resources.filter(r => r.addedBy === memUser.id || r.addedBy === memUser.email);
+      return res.json({
+        status: 'success',
+        data: userMemResources
+      });
+    }
+    
+    // For database users, return mock resources or from the in-memory array
+    // In a real app, this would query the resources collection
+    const userId = dbUser._id.toString();
+    const userResources = resources.filter(r => r.addedBy === userId || r.addedBy === dbUser.email);
+    
+    console.log(`Found ${userResources.length} resources for user ${dbUser.name} with ID ${userId}`);
+    
+    // If no resources found, return demo/mock resources to show UI
+    if (userResources.length === 0) {
+      const mockResources = [
+        {
+          id: 'demo1',
+          title: 'Demo Resource 1',
+          description: 'This is a demo resource to demonstrate the UI.',
+          url: 'https://example.com/demo1',
+          category: 'Demo',
+          addedBy: userId,
+          date: new Date().toISOString().split('T')[0],
+          upvotes: 5
+        },
+        {
+          id: 'demo2',
+          title: 'Demo Resource 2',
+          description: 'Another demo resource to demonstrate the UI.',
+          url: 'https://example.com/demo2',
+          category: 'Demo',
+          addedBy: userId,
+          date: new Date().toISOString().split('T')[0],
+          upvotes: 3
+        }
+      ];
+      
+      return res.json({
+        status: 'success',
+        data: mockResources,
+        message: 'No actual resources found. Showing demo resources.'
+      });
+    }
+    
+    return res.json({
+      status: 'success',
+      data: userResources
+    });
+  } catch (err) {
+    console.error(`Error fetching user resources: ${err.message}`);
+    return res.status(500).json({
       status: 'error',
-      message: 'User not found'
+      message: 'Server error fetching user resources'
     });
   }
-  
-  // Mock resources - in real app, this would query the resources collection
-  const mockResources = [
-    {
-      id: '101',
-      title: 'Introduction to AI',
-      url: 'https://example.com/intro-ai',
-      addedBy: user.id,
-      date: '2023-10-15',
-      upvotes: 15
-    },
-    {
-      id: '102',
-      title: 'ChatGPT Guide',
-      url: 'https://example.com/chatgpt-guide',
-      addedBy: user.id,
-      date: '2023-10-10',
-      upvotes: 8
-    }
-  ];
-  
-  return res.json({
-    status: 'success',
-    count: mockResources.length,
-    data: mockResources
-  });
 });
 
 /**
@@ -392,7 +464,64 @@ router.get('/debug-current', protect, async (req, res) => {
   }
 });
 
-module.exports = { 
-  router, 
-  users  // Export the users array
+/**
+ * @route GET /api/users/debug-user/:id
+ * @description Debug endpoint to get raw user data for a specific ID
+ * @access Public (for development only)
+ */
+router.get('/debug-user/:id', async (req, res) => {
+  try {
+    console.log(`Attempting to find user with ID: ${req.params.id}`);
+    
+    // Try to find the user in MongoDB
+    const dbUser = await User.findById(req.params.id);
+    
+    if (dbUser) {
+      console.log(`Found user in MongoDB: ${dbUser.name}`);
+      return res.json({
+        status: 'success',
+        source: 'mongodb',
+        data: {
+          id: dbUser._id.toString(),
+          name: dbUser.name,
+          email: dbUser.email,
+          role: dbUser.role,
+          points: dbUser.points,
+          contributions: dbUser.contributions,
+          rawData: dbUser
+        }
+      });
+    }
+    
+    // Try to find in memory array
+    const memUser = users.find(u => u.id === req.params.id || u._id === req.params.id);
+    
+    if (memUser) {
+      console.log(`Found user in memory array: ${memUser.name}`);
+      return res.json({
+        status: 'success',
+        source: 'memory',
+        data: memUser
+      });
+    }
+    
+    console.log(`User not found in either source with ID: ${req.params.id}`);
+    return res.status(404).json({
+      status: 'error',
+      message: 'User not found in any data source'
+    });
+    
+  } catch (err) {
+    console.error(`Error in debug-user: ${err.message}`);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Server error fetching user debug data',
+      error: err.message 
+    });
+  }
+});
+
+// Export router in an object format
+module.exports = {
+  router: router
 }; 

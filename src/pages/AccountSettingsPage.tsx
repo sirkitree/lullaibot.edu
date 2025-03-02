@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Box, Typography, Paper, Grid, TextField, Button, Divider, CircularProgress, Alert, Snackbar } from '@mui/material';
+import { Box, Typography, Paper, Grid, TextField, Button, CircularProgress, Alert, Snackbar } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import api from '../utils/api';
 
@@ -11,7 +11,7 @@ const SettingsBox = styled(Paper)(({ theme }: { theme: any }) => ({
 }));
 
 const AccountSettingsPage: React.FC = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, updateUserProfile } = useAuth();
   
   // Form states
   const [name, setName] = useState<string>(user?.name || '');
@@ -29,6 +29,16 @@ const AccountSettingsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
+
+  // Update form values when user data changes
+  useEffect(() => {
+    if (user) {
+      setName(user.name || '');
+      setEmail(user.email || '');
+      setBio(user.bio || '');
+      setProfilePicture(user.profilePicture || '');
+    }
+  }, [user]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +59,9 @@ const AccountSettingsPage: React.FC = () => {
       if (response.data.success) {
         setSuccessMessage('Profile information updated successfully');
         setOpenSnackbar(true);
+        
+        // Refresh user data using the new context method
+        await updateUserProfile();
       }
     } catch (err: any) {
       console.error('Error updating profile:', err);
