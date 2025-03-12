@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const { ensureMongoRunning } = require('../utils/mongoManager');
 
 // Load environment variables
 dotenv.config();
@@ -17,11 +18,22 @@ const options = {
 // Connect to MongoDB
 const connectDB = async () => {
   try {
+    // First ensure MongoDB is running
+    const isRunning = await ensureMongoRunning();
+    if (!isRunning) {
+      throw new Error('MongoDB could not be started');
+    }
+
+    // Attempt to connect
     const conn = await mongoose.connect(MONGODB_URI, options);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     return conn;
   } catch (error) {
     console.error(`Error connecting to MongoDB: ${error.message}`);
+    console.error('Please ensure MongoDB is installed and can be started.');
+    console.error('On macOS: brew install mongodb-community');
+    console.error('On Linux: sudo apt install mongodb');
+    console.error('On Windows: Download and install from https://www.mongodb.com/try/download/community');
     process.exit(1);
   }
 };
@@ -49,10 +61,9 @@ mongoose.connection.on('disconnected', () => {
   console.log('Mongoose disconnected');
 });
 
-// If the Node process ends, close the Mongoose connection
+// Handle process termination
 process.on('SIGINT', async () => {
-  await mongoose.connection.close();
-  console.log('Mongoose connection closed due to app termination');
+  await disconnectDB();
   process.exit(0);
 });
 

@@ -22,10 +22,6 @@ interface UserStats {
   points: number;
   streak: number;
   rank: number;
-  achievements: {
-    earned: number;
-    total: number;
-  };
 }
 
 const ProfilePage: React.FC = () => {
@@ -139,10 +135,8 @@ const ProfilePage: React.FC = () => {
                 contributions={stats.contributions} 
                 streak={stats.streak}
                 rank={stats.rank}
-                achievements={{
-                  earned: stats.achievements.earned,
-                  total: stats.achievements.total
-                }}
+                variant="full"
+                showLinks={true}
               />
             ) : (
               <Typography variant="body1">No stats available</Typography>

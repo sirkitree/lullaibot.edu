@@ -3,8 +3,6 @@ import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import ResourcesPage from './pages/ResourcesPage';
 import AddResourcePage from './pages/AddResourcePage';
-import AchievementsPage from './pages/AchievementsPage';
-import LeaderboardPage from './pages/LeaderboardPage';
 import NotFoundPage from './pages/NotFoundPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -28,22 +26,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <AddResourcePage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/achievements" 
-            element={
-              <ProtectedRoute>
-                <AchievementsPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/leaderboard" 
-            element={
-              <ProtectedRoute>
-                <LeaderboardPage />
               </ProtectedRoute>
             } 
           />

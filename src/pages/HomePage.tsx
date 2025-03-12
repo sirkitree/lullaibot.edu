@@ -21,44 +21,73 @@ const HomePage: React.FC = () => {
         const response = await api.get('/resources', {
           params: {
             limit: 3,
-            sort: '-createdAt' // Sort by most recent
+            sort: '-date' // Sort by most recent
           }
         });
         
-        if (response.data.status === 'success') {
-          setRecentResources(response.data.data);
+        // Log the response for debugging
+        console.log('Recent resources response:', response);
+        
+        // Handle both array and object response formats
+        const resourcesData = Array.isArray(response.data) ? response.data : 
+                            response.data?.data || response.data?.resources || [];
+        
+        if (resourcesData.length > 0) {
+          // Map API response to match ResourceProps interface
+          const mappedResources = resourcesData.map((resource: any) => ({
+            id: resource.id || '',
+            title: resource.title || '',
+            description: resource.description || '',
+            url: resource.url || '',
+            category: resource.category || 'Uncategorized',
+            addedBy: resource.addedBy || resource.submittedBy?.name || 'Unknown',
+            date: resource.date || resource.createdAt || new Date().toISOString(),
+            tags: resource.tags || [],
+            upvotes: resource.upvotes || 0,
+            screenshot: resource.screenshot || resource.thumbnail || null
+          }));
+          setRecentResources(mappedResources);
           
           // Generate category counts from all resources
           const allResourcesResponse = await api.get('/resources');
-          if (allResourcesResponse.data.status === 'success') {
-            const allResources = allResourcesResponse.data.data;
-            
+          console.log('All resources response:', allResourcesResponse);
+          
+          // Handle both array and object response formats for all resources
+          const allResourcesData = Array.isArray(allResourcesResponse.data) ? allResourcesResponse.data :
+                                 allResourcesResponse.data?.data || allResourcesResponse.data?.resources || [];
+          
+          if (allResourcesData.length > 0) {
             // Count resources by category
             const categoryCounts: Record<string, number> = {};
-            allResources.forEach((resource: ResourceProps) => {
-              const category = resource.category;
+            allResourcesData.forEach((resource: any) => {
+              const category = resource.category || 'Uncategorized';
               categoryCounts[category] = (categoryCounts[category] || 0) + 1;
             });
             
             // Convert to array for display
-            const categoryArray = Object.entries(categoryCounts).map(([name, count], index) => ({
-              id: index + 1,
-              name,
-              count
-            }));
+            const categoryArray = Object.entries(categoryCounts)
+              .sort(([,a], [,b]) => b - a) // Sort by count descending
+              .map(([name, count], index) => ({
+                id: index + 1,
+                name,
+                count
+              }));
             
             setCategories(categoryArray);
           }
         } else {
-          throw new Error('Failed to fetch resources');
+          console.log('No resources found in the response');
+          setRecentResources([]);
+          setCategories([]);
         }
         
         setError(null);
       } catch (error) {
-        console.error('Error fetching recent resources:', error);
-        setError('Failed to load recent resources');
+        console.error('Error fetching resources:', error);
+        setError('Failed to load resources');
         // Show empty state
         setRecentResources([]);
+        setCategories([]);
       } finally {
         setLoading(false);
       }
@@ -85,7 +114,7 @@ const HomePage: React.FC = () => {
             <h2>Welcome to LullAIbot Education</h2>
             <p>
               Discover, contribute, and learn from Lullabot's collection of AI resources.
-              Add new links, browse existing content, and earn achievements along the way.
+              Add new links and browse existing content.
             </p>
             <div className="flex gap-md mt-md">
               <Link to="/resources" className="button button-primary">Browse Resources</Link>

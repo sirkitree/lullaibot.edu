@@ -19,23 +19,34 @@ const getServerPort = () => {
   return 3002; // Default fallback port
 };
 
-// Determine the API URL
-const API_URL = import.meta.env.VITE_API_URL || 
-  (import.meta.env.MODE === 'production' 
-    ? 'https://lullaibot-edu-api.onrender.com/api' 
-    : `http://localhost:${getServerPort()}/api`);
+// Determine the base URL for API requests
+const getBaseUrl = () => {
+  // First priority: environment variable
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
 
-console.log('API URL:', API_URL);
+  // Second priority: production URL
+  if (import.meta.env.PROD) {
+    return '/api';
+  }
 
-// Create an axios instance with default config
+  // Third priority: local development with dynamic port
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+  const port = getServerPort();
+  return `${protocol}//${hostname}:${port}/api`;
+};
+
+// Create axios instance with base URL
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: getBaseUrl(),
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-// Add a request interceptor for authentication
+// Add request interceptor to include auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');

@@ -138,7 +138,7 @@ const ContentModeration: React.FC<Props> = ({ setError, setLoading }) => {
   }, [page, rowsPerPage, searchTerm, tabValue]);
 
   // Handle pagination
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
@@ -148,7 +148,7 @@ const ContentModeration: React.FC<Props> = ({ setError, setLoading }) => {
   };
 
   // Handle tab change
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
     setPage(0);
   };

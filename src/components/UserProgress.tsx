@@ -8,20 +8,24 @@ interface UserStats {
   points: number;
   streak: number;
   rank: number;
-  achievements: {
-    earned: number;
-    total: number;
-  };
 }
 
 interface UserProgressProps {
   variant?: 'full' | 'compact';
   showLinks?: boolean;
+  points: number;
+  contributions: number;
+  streak: number;
+  rank: number;
 }
 
 const UserProgress: React.FC<UserProgressProps> = ({ 
   variant = 'full',
-  showLinks = true
+  showLinks = true,
+  points,
+  contributions,
+  streak,
+  rank
 }) => {
   const { user, token } = useAuth();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
@@ -50,11 +54,7 @@ const UserProgress: React.FC<UserProgressProps> = ({
           contributions: 12,
           points: 142,
           streak: 3,
-          rank: 5,
-          achievements: {
-            earned: 4,
-            total: 12
-          }
+          rank: 5
         });
       } finally {
         setLoading(false);
@@ -89,73 +89,41 @@ const UserProgress: React.FC<UserProgressProps> = ({
       <div className="user-progress-compact">
         <div className="flex justify-between items-center">
           <div className="user-points">
-            <span className="points-value">{userStats.points}</span>
+            <span className="points-value">{points}</span>
             <span className="points-label">Points</span>
           </div>
           <div className="user-rank">
-            <span className="rank-value">#{userStats.rank}</span>
+            <span className="rank-value">#{rank}</span>
             <span className="rank-label">Rank</span>
           </div>
-        </div>
-        
-        <div className="progress-section mt-sm">
-          <div className="progress-bar">
-            <div 
-              className="progress-fill" 
-              style={{ width: `${(userStats.achievements.earned / userStats.achievements.total) * 100}%` }}
-            ></div>
-          </div>
-          <p className="progress-text">
-            {userStats.achievements.earned}/{userStats.achievements.total} achievements
-          </p>
         </div>
       </div>
     );
   }
 
-  // Full variant shows all stats and links
+  // Full variant shows all stats
   return (
     <div className="user-progress">
       <h3>Your Progress</h3>
       <div className="card">
         <div className="stats-grid">
           <div className="stat-item">
-            <span className="stat-value">{userStats.contributions}</span>
+            <span className="stat-value">{contributions}</span>
             <span className="stat-label">Contributions</span>
           </div>
           <div className="stat-item">
-            <span className="stat-value">{userStats.points}</span>
+            <span className="stat-value">{points}</span>
             <span className="stat-label">Points</span>
           </div>
           <div className="stat-item">
-            <span className="stat-value">{userStats.streak}</span>
+            <span className="stat-value">{streak}</span>
             <span className="stat-label">Day Streak</span>
           </div>
           <div className="stat-item">
-            <span className="stat-value">#{userStats.rank}</span>
+            <span className="stat-value">#{rank}</span>
             <span className="stat-label">Rank</span>
           </div>
         </div>
-        
-        <div className="progress-section mt-md">
-          <h4>Achievements</h4>
-          <div className="progress-bar">
-            <div 
-              className="progress-fill" 
-              style={{ width: `${(userStats.achievements.earned / userStats.achievements.total) * 100}%` }}
-            ></div>
-          </div>
-          <p className="progress-text">
-            {userStats.achievements.earned}/{userStats.achievements.total} achievements unlocked
-          </p>
-        </div>
-        
-        {showLinks && (
-          <div className="progress-links mt-md">
-            <Link to="/achievements" className="button button-secondary">View Achievements</Link>
-            <Link to="/leaderboard" className="button button-outline ml-sm">Leaderboard</Link>
-          </div>
-        )}
       </div>
     </div>
   );

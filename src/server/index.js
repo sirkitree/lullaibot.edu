@@ -70,7 +70,6 @@ if (process.env.NODE_ENV !== 'test') {
 const { router: resourceRoutes, adminRouter: resourceAdminRoutes } = require('./routes/resources');
 const categoryRoutes = require('./routes/categories');
 const { router: userRoutes } = require('./routes/users');
-const { router: achievementRoutes } = require('./routes/achievements');
 const authRoutes = require('./routes/auth');
 const llmRoutes = require('./routes/llm');
 const analyticsRoutes = require('./routes/analytics');
@@ -79,11 +78,49 @@ const analyticsRoutes = require('./routes/analytics');
 app.use('/api/resources', resourceRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/achievements', achievementRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/llm', llmRoutes);
 app.use('/api/admin', resourceAdminRoutes);
 app.use('/api/admin/analytics', analyticsRoutes);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server Error:', err);
+  res.status(500).json({ error: 'Internal Server Error', message: err.message });
+});
+
+// Start server
+const server = app.listen(PORT, () => {
+  console.log(`
+🚀 Server is running on port ${PORT}
+📁 API endpoints available at http://localhost:${PORT}/api
+🔄 Environment: ${process.env.NODE_ENV || 'development'}
+  `);
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`⚠️  Port ${PORT} is already in use. Please try these steps:
+    1. Check if another instance of the server is running
+    2. Stop any process using port ${PORT} with: lsof -i :${PORT} | grep LISTEN
+    3. Kill the process with: kill -9 <PID>
+    4. Restart the server
+    `);
+  } else {
+    console.error('Server failed to start:', error);
+  }
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM. Performing graceful shutdown...');
+  server.close(() => {
+    console.log('Server closed. Exiting process.');
+    process.exit(0);
+  });
+});
 
 // Update existing users with legacyId if not present
 const User = require('./models/User');
@@ -137,7 +174,6 @@ app.get('/api', (req, res) => {
       resources: '/api/resources',
       categories: '/api/categories',
       users: '/api/users',
-      achievements: '/api/achievements',
       auth: '/api/auth',
       llm: '/api/llm',
       health: '/api/health'
@@ -145,30 +181,5 @@ app.get('/api', (req, res) => {
     documentation: '/api/docs'
   });
 });
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    status: 'error',
-    message: err.message || 'Internal Server Error',
-    error: process.env.NODE_ENV === 'development' ? err : {}
-  });
-});
-
-// Start server
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`
-======================================
-🚀 Server running on port ${PORT}
-📝 API documentation: http://localhost:${PORT}/api
-👤 Health check: http://localhost:${PORT}/api/health
-👤 Authentication routes: http://localhost:${PORT}/api/auth
-🤖 LLM routes: http://localhost:${PORT}/api/llm
-======================================
-    `);
-  });
-}
 
 module.exports = app; // Export for testing 
