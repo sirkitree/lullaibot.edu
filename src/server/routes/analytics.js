@@ -4,7 +4,49 @@ const { protect, authorize } = require('../middleware/auth');
 
 // Import models or data sources
 const User = require('../models/User');
+const Resource = require('../models/Resource');
+const Category = require('../models/Category');
 const { resources } = require('./resources');
+
+/**
+ * @route GET /api/admin/analytics/stats/overview
+ * @description Get overall site statistics
+ * @access Public
+ */
+router.get('/stats/overview', async (req, res) => {
+  try {
+    // Get counts from MongoDB
+    const [totalResources, totalUsers, categories] = await Promise.all([
+      Resource.countDocuments({}),
+      User.countDocuments({}),
+      Category.find({}).select('name resourceCount -_id')
+    ]);
+
+    // Sort categories by count and get top 5
+    const popularCategories = categories
+      .map(cat => ({ name: cat.name, count: cat.resourceCount || 0 }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    const stats = {
+      totalResources,
+      totalUsers,
+      totalContributions: totalResources, // For now, each resource counts as one contribution
+      popularCategories
+    };
+    
+    res.json({
+      status: 'success',
+      data: stats
+    });
+  } catch (err) {
+    console.error('Error fetching site stats:', err);
+    res.status(500).json({
+      status: 'error',
+      message: 'Server error while fetching site stats'
+    });
+  }
+});
 
 /**
  * @route GET /api/admin/analytics/stats
