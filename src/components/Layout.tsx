@@ -63,22 +63,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   Add Resource
                 </Link>
               </li>
-              <li>
-                <Link
-                  to="/achievements"
-                  className={`nav-link ${isActiveRoute('/achievements') ? 'active' : ''}`}
-                >
-                  Achievements
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/leaderboard"
-                  className={`nav-link ${isActiveRoute('/leaderboard') ? 'active' : ''}`}
-                >
-                  Leaderboard
-                </Link>
-              </li>
             </ul>
           </nav>
           
